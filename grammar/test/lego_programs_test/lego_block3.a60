@@ -1,0 +1,12 @@
+begin
+comment own qualifier;
+	integer i;
+	
+	for i := 1 step 1 until 10 do
+	begin
+		own integer nn;
+		outreal (1,nn);
+		nn := nn + 1
+	end
+
+end 

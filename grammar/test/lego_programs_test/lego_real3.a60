@@ -1,0 +1,9 @@
+begin
+	comment for experiments to find max real, epsilon, min positive real;
+	comment estimations 1e308, 1.00000000001, 1e-323;
+	real x;
+start:;	
+	inreal(0, x);
+	outreal(1,x);
+	goto start;
+end

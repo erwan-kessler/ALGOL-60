@@ -1,0 +1,18 @@
+begin
+    integer id;
+    comment `Simple Hello World! program';
+    procedure displayId(text,id); value id;
+        comment `This procedure display your id passed by value in parameter';
+        integer id;
+        string text;
+        begin
+            outstring(1,text);
+            outinteger(1,id);
+            outstring(1,` !\n');
+        end;
+    outstring(1,`HELLO');
+    outstring(1,` WORLD');
+    outstring(1,` ! \n');
+    id:=1;
+    displayId(`My id is: ',id);
+end

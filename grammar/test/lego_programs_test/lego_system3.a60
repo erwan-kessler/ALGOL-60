@@ -1,0 +1,6 @@
+real procedure cputime;
+inline("my_dsa.retval.u.real_val = (double)clock() / (double)CLOCKS_PER_SEC;");
+
+begin
+	outreal(1, cputime)
+end

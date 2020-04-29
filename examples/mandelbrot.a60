@@ -1,0 +1,33 @@
+begin
+    integer i;
+    real x, y;
+    real a, b;
+
+    real procedure ReMul(a1, b1, a2, b2);
+    value a1, b1, a2, b2;
+    real a1, b1, a2, b2;
+    ReMul := a1*a2 - b1*b2;
+
+    real procedure ImMul(a1, b1, a2, b2);
+    value a1, b1, a2, b2;
+    real a1, b1, a2, b2;
+    ImMul := a1*b2 + a2*b1;
+
+    for y := 1 step -0.125 until -1 do
+    begin
+        for x := -2 step 0.125 until 0.5 do
+        begin
+            a := x;
+            b := y;
+            for i := 1 while i < 50 /\ a*a+b*b < 4 do
+            begin
+                a := ReMul(a, b, a, b) + x;
+                b := ImMul(a, b, a, b) + y;
+                i := i + 1;
+            end;
+            outchar(1, ` #', if i < 50 then 1 else 2);
+            outchar(1, ` #', if i < 50 then 1 else 2);
+        end;
+        outstring(1, `')
+    end
+end

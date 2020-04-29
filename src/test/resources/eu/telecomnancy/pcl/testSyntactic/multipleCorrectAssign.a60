@@ -1,0 +1,15 @@
+begin
+    integer n;
+    n:=3;
+    begin
+        integer b;
+        n:=b;
+        begin
+            integer n;
+            n:=n:=5;
+        end;
+        begin
+            n:=b:=b:=b;
+        end
+    end
+end

@@ -1,0 +1,15 @@
+begin
+    integer x,n;
+    integer procedure intpowint(x,n); value x,n; integer x,n;
+        begin
+            integer i;
+            integer result;
+            result := x;
+            for i:= 1 step 1 until n-1 do
+                begin
+                    result := result *x;
+                end;
+             intpowint := result;
+        end;
+    outinteger(1,intpowint(2,5))
+end

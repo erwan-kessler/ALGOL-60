@@ -1,0 +1,13 @@
+begin
+comment: compare  11/6   and  13/6;
+
+	integer n, m, d;
+	real r;
+	ininteger(0,n); ininteger(0,m);
+	d := n / m;
+	outinteger(1,d);
+	
+	r := n / m;
+	outinteger(1,r)
+	
+end

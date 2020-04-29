@@ -1,0 +1,22 @@
+begin
+	comment square equation;
+	
+	real a, b, c;
+	real d;
+	real x1, x2;
+	
+	outstring(1,"coefficients a,b,c = ");
+	inreal(0,a); inreal(0,b); inreal(0,c);
+	
+	d := b*b - 4.0*a*c;
+	if d > 0.0 then
+	begin
+		x1 := (-b + sqrt(d) )/2.0/a;
+		x2 := (-b - sqrt(d) )/2.0/a
+	end;
+	
+	outstring(1,"solution = ");
+	outreal(1,x1); outreal(1,x2);
+	outstring(1,"\n")
+	
+end

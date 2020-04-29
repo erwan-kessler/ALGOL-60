@@ -1,0 +1,8 @@
+begin
+    integer i,r;
+    integer array arr[0:10];
+    integer array arr2[0:10];
+    for i := 0 step 1 until 9 do arr[i]:=i;
+    for i := 0 step 1 until 9 do arr2[i]:=10-i;
+    for i := 0 step 1 until 9 do outinteger(1,arr2[arr[i]]);
+end

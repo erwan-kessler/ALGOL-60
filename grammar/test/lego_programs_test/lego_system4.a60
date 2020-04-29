@@ -1,0 +1,16 @@
+real procedure cputime;
+inline("my_dsa.retval.u.real_val = (double)clock() / (double)CLOCKS_PER_SEC;");
+
+begin
+comment MARST example of using inline procedure;
+	integer n, m;
+	
+	inline("dsa_0->n_5 = clock();"); comment in millisec;
+	outinteger(1, n); outstring(1,"\n");
+	
+	for m:=1 step 1 until 1000000000 do n := n + m;
+	
+	inline("dsa_0->n_5 = clock();");
+	outinteger(1, n); outstring(1,"\n")
+	
+end

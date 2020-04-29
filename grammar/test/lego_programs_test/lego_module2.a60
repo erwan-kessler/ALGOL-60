@@ -1,0 +1,6 @@
+procedure Print1(m);
+value m; integer m;
+code;
+begin
+	Print1(5)
+end

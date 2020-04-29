@@ -1,0 +1,11 @@
+begin
+comment stop procedure;
+	integer i;
+	
+	for i := 1 step 1 until 20 do
+	begin
+		outinteger(1, i);
+		if i = 11 then stop
+	end
+	
+end

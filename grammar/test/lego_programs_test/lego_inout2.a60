@@ -1,0 +1,10 @@
+begin
+	comment: FILE_4 creation with output of real vector;
+	integer n, i;
+	
+	n := 100;
+	for i := 1 step 1 until n do
+	begin
+		outreal ( 4 , sqrt(i)); outstring (4,"\n")
+	end
+end

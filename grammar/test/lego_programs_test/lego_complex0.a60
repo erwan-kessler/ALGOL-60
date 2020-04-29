@@ -1,0 +1,31 @@
+begin
+comment: complex numbers input/output and addition;
+	real c1r, c1i, c2r, c2i, c3r, c3i;
+	
+	procedure outcomplex(channel, cr, ci); integer channel; real cr, ci;
+	begin
+		outreal (channel, cr); outstring (channel,"+i*");outreal (channel, ci) 
+	end ;
+	
+	procedure incomplex(channel, cr, ci); integer channel; real cr, ci;
+	begin
+		inreal (channel,cr); outstring (channel,"+i*"); inreal (channel, ci)
+	end ;
+	procedure incomplex0( cr, ci);  real cr, ci;
+	begin
+		inreal (0,cr); outstring (1,"+i * "); inreal (0, ci)
+	end ;
+	
+	procedure complexAdd( cr1, ci1, cr2, ci2, cr3, ci3);
+	real cr1, ci1, cr2, ci2, cr3, ci3;
+	begin
+		cr3 := cr1 + cr2;
+		ci3 := ci1 + ci2
+	end ;
+	
+	incomplex0(c1r, c1i);outstring(1,"\n");
+	incomplex0(c2r, c2i);
+
+	complexAdd( c1r, c1i, c2r, c2i, c3r, c3i);
+	outcomplex(1, c3r, c3i); outstring(1,"\n")
+end

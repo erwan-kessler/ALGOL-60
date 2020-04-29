@@ -1,0 +1,34 @@
+main : begin
+comment This is a test programm for the grammar and AST;
+
+Boolean bool;
+real a,b,c,d;
+integer array arr[1:17,a:b,1:a*b+d];
+
+real procedure testProcedure (a,b) whateverThisIs:(whateverThatIs) ; value a,b ;
+begin
+    for i := 1 step 7 until 3*6+1 do
+    begin
+        if bool \/ true /\ false => ~bool <=> false then
+        begin
+            a:=42;
+        end
+        else 
+        begin
+            if true then
+            begin
+            a:=4242;
+            end
+            else
+            arr[17+b]:=13;
+        end
+    end;
+end
+
+
+a:=b:=c:=42;
+d := a*b+c/2;
+c := testProcedure(a,d)
+
+
+end

@@ -1,0 +1,76 @@
+begin
+    comment LIBRARY 1;
+    Boolean B;
+    real X;
+    integer array A [+ 1 : .6e2];
+    integer I, N;
+    B := false;
+    N := 1e+2 * .6;
+    X := 0;
+    comment   ;
+    begin
+        comment   ;
+        own real array C0 [0 : 1];
+        procedure P (A, B, C); value A;
+            integer A;
+            string B;
+            Boolean array C;
+            begin
+
+               begin
+                  C [(1)] := true /\ .8 > C0 [if true then 0 else 1];
+                  C [ - ( - 2) ]:= false \/ .4 >= X + 500e-2;
+                  C [.3e1]:= (.3 ** (0)) \/ (if 1e1 ** 1e4 then true else false);
+                  if false then
+                     P(A, `STRING', C)
+                  else
+               end;
+
+               for I := 1 step 1 until 3 do
+				   begin
+					  if .3 <= 6 / 2 then
+						 go to  OUT;
+					  OUT :
+				   end;
+			end;
+
+        real procedure A0L;
+			A0L :=if X < X then 1e4 else .6;
+
+        integer procedure II;
+			II := + 1 * (3 / (4)) - 1e2 + A0L;
+
+        begin
+            Boolean array C [II + II / II / II : 1**II + 3];
+            C0 [ 0 ]:= if B /\ (1) = (2) then 0 else 0;
+            P ( + 1)L : ( ` ' )M : (C);
+            I := - N - I * N / N**1;
+            go to if 1 - .9 = II / 6 /\ II <= A0L then L else L1;
+
+            L :
+			L1 :
+
+			for I := I step N until II do ;
+
+            if + .3 + 1e2 = + (.3) then
+                B := ~ B <=> false
+            else
+                B := 1e1 > 3 <=> true;
+
+            for I := ((1)) step + (1) until + 60 do
+				begin
+					A [1e1 - 9] := 1 / .1 - 0.1;
+					A [ I    ] := if (true) \/ A [1]- 1 ** A [1e1 - 9] * 1 => false then + 1 else - 1
+				end;
+
+            for  I := 1, - 9 + A [1] step  - 9 + A [1] + 1 until  .6e1 do
+                N := if + A [1] + 0 = A [1] then 0 else 1e1 - 9 + N;
+
+            if 23 + N **1 <=> N = - N \/ 0 < +N /\ 0 + N >= 0 then else go to L2;
+            B := B => N > + 0 <=> 0 < - A [1] / 1e1 \/ true;
+            L2 :
+			go to (L2);
+         end;
+	end;
+end
+

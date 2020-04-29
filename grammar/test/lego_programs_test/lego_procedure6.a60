@@ -1,0 +1,15 @@
+begin
+comment passing parameter by value;
+	integer n, nn;
+	
+	comment by value;
+	procedure proc1(m); value m; integer m;
+	begin
+		m := m+1
+	end;
+		
+	n := 1;
+	proc1(n);
+	outinteger( 1 , n)
+	
+end

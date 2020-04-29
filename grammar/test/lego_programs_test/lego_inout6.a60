@@ -1,0 +1,10 @@
+begin
+	comment: FILE_6 creation with output of integer , real and string;
+	integer n;
+	real r;
+	n := 123;
+	r := 3.14159;
+	outinteger ( 6 , n);
+	outreal ( 6 , r);
+	outstring ( 6 , "mix")
+end

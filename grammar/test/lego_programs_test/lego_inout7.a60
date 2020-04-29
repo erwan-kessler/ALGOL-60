@@ -1,0 +1,9 @@
+begin
+	comment: FILE_6 reading with integer , real and string;
+	integer n;
+	real r;
+	ininteger ( 6 , n);
+	outinteger ( 1 , n);
+	inreal ( 6 , r);
+	outreal ( 1 , r)
+end

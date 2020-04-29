@@ -1,0 +1,16 @@
+begin
+	integer n, m, i;
+	integer array d[1:18];
+	d[1] := 2;   d[2] := 3;   d[3] := 5;   d[4] := 7;   d[5] := 11;  d[6] := 13;
+	d[7] := 17;  d[8] := 19;  d[9] := 23;  d[10] := 29; d[11] := 31; d[12] := 37; 
+	d[13] := 41; d[14] := 43; d[15] := 47; d[16] := 53; d[17] := 59; d[18] := 61; 
+	
+	ininteger(0,n);
+	
+	for i:=1 step 1 until 18 do
+	begin
+	    m := n % d[i];
+		if (n - m*d[i]) = 0 then 	outinteger (1, d[i]) 
+	end ;
+	outstring(1,"\n")
+end

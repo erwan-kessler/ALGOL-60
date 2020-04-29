@@ -1,0 +1,13 @@
+begin
+
+    Boolean B;
+    integer x;
+    integer array A [1:5];
+    integer s;
+    x := 2 := 3;
+    x := true;
+    x := A;
+    x := B := 2;
+    x := A[ if true then B else false ];
+
+end

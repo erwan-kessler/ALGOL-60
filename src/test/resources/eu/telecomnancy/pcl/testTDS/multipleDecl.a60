@@ -1,0 +1,17 @@
+begin
+    integer a;
+    integer a;
+    begin
+        integer a;
+        integer b;
+        integer a;
+        begin
+            integer b;
+            comment b;
+            integer b;
+            begin
+                ;
+            end
+        end
+    end
+end

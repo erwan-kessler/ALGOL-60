@@ -1,0 +1,3143 @@
+RST_ADDR                EQU     0xfffa
+RSP_ADDR                EQU     0xfff0
+LIB_ADDR                EQU     0x0400
+APP_ADDR                EQU     0x2000
+
+BP                      EQU     R14
+SP                      EQU     R15
+
+IDT_SIZE                EQU     0x0400
+
+IRQ_EXIT                EQU     64
+IRQ_READ                EQU     65
+IRQ_WRITE               EQU     66
+
+////////////////////////////////////////////////////////////////////////////////
+
+ORG                     LIB_ADDR
+START                   entry_
+STACKBASE               RSP_ADDR
+
+////////////////////////////////////////////////////////////////////////////////
+
+entry_
+                                // init stack
+                                ldw     BP, #RSP_ADDR
+                                ldw     SP, BP
+
+                                // init idt
+                                jsr     @idt_init_
+
+                                eni
+
+                                jsr     @main
+
+                                jea     @exit_
+
+exit_
+                                trp     #IRQ_EXIT
+                                bmp     0
+
+isr_generic_
+                                stw     BP, -(SP)
+                                ldw     BP, SP
+                                stw     R0, -(SP)
+
+                                ldw     R0, #rodata_isr_generic_
+                                stw     R0, -(SP)
+                                jsr     @print_string
+                                adq     2, SP
+
+                                jsr     @print_newline
+
+                                ldw     R0, (SP)+
+                                ldw     BP, (SP)+
+                                rti
+
+idt_init_
+                                stw     BP, -(SP)
+                                ldw     BP, SP
+                                stw     R1, -(SP)
+                                stw     R2, -(SP)
+
+                                // init default interrupt handler
+                                ldw     R2, #isr_generic_
+                                ldq     0, R0
+        idt_init_loop_
+                                stw     R2, (R0)
+                                adq     4, R0
+                                ldw     R1, #IDT_SIZE
+                                sub     R0, R1, R1
+                                bne     idt_init_loop_ - $ - 2
+
+                                ldq     0, R0
+
+                                ldw     R2, (SP)+
+                                ldw     R1, (SP)+
+                                ldw     BP, (SP)+
+                                rts
+
+exit
+                                ldw     R0, #rodata_exit_
+                                stw     R0, -(SP)
+                                jsr     @print_string
+                                adq     2, SP
+
+                                jsr     @print_newline
+
+                                jea     @exit_
+
+print_newline
+                                stw     BP, -(SP)
+                                ldw     BP, SP
+                                stw     R0, -(SP)
+
+                                // string address
+                                ldw     R0, #rodata_line_feed_
+                                // syscall
+                                trp     #IRQ_WRITE
+
+                                ldq     0, R0
+
+                                ldw     R0, (SP)+
+                                ldw     BP, (SP)+
+                                rts
+
+print_string
+                                stw     BP, -(SP)
+                                ldw     BP, SP
+                                stw     R0, -(SP)
+
+                                // string address
+                                ldw     R0, (BP)4
+                                // syscall
+                                trp     #IRQ_WRITE
+
+                                ldq     0, R0
+
+                                ldw     R0, (SP)+
+                                ldw     BP, (SP)+
+                                rts
+
+print_short
+                                stw     BP, -(SP)
+                                ldw     BP, SP
+                                stw     R0, -(SP)
+                                stw     R1, -(SP)
+                                stw     R2, -(SP)
+
+                                // signed short < 8 characters (with padding)
+                                adq     -8, SP
+                                // null character
+                                ldq     0, R2
+                                stw     R2, (SP)6
+                                // current character
+                                ldw     R2, SP
+                                adq     5, R2
+                                // signed short integer
+                                ldw     R0, (BP)4
+                                // abs
+                                stw     R0, -(SP)
+                                jsr     @abs_short
+                                adq     2, SP
+        print_short_loop
+                                // divide by 10
+                                ldq     10, R1
+                                div     R0, R1, R1
+                                // add ASCII offset
+                                adq     48, R0
+                                // store character
+                                stb     R0, (R2)
+                                // decrement current character
+                                adq     -1, R2
+                                // prepare next iteration
+                                ldw     R0, R1
+                                // next interation
+                                bne     print_short_loop - $ - 2
+                                // signed short
+                                ldw     R0, (BP)4
+                                // sign bit
+                                ani     R0, R1, #0x8000
+                                // positive
+                                beq     print_short_positive - $ - 2
+                                // negative
+                                ldq     45, R0
+                                stb     R0, (R2)
+                                adq     -1, R2
+        print_short_positive
+                                // fix current character
+                                adq     1, R2
+                                // string address
+                                ldw     R0, R2
+                                // syscall
+                                trp     #IRQ_WRITE
+                                // clear stack
+                                adq     8, SP
+
+                                ldq     0, R0
+
+                                ldw     R2, (SP)+
+                                ldw     R1, (SP)+
+                                ldw     R0, (SP)+
+                                ldw     BP, (SP)+
+                                rts
+
+print_fraction
+                                stw     BP, -(SP)
+                                ldw     BP, SP
+                                stw     R0, -(SP)
+                                stw     R1, -(SP)
+                                stw     R2, -(SP)
+                                stw     R3, -(SP)
+                                stw     R4, -(SP)
+
+                                // load the fractionnal part we want to print
+                                ldw     R0, (BP)4
+
+                                ldq     10, R1
+                                ldw     R3, SP
+                                adq     -1, R3  // place for the NUL character
+                                adq     -8, SP  // the precision is good enough for 7 digits
+                                ldw     R4, SP
+
+        print_fraction_loop
+                                // here we use the big_mul function
+                                stw     R0, -(SP)
+                                stw     R1, -(SP)
+                                ldw     R2, SP
+                                stw     R2, -(SP)
+                                jsr     @big_mul
+                                adq     2, SP
+                                ldw     R0, (SP)+
+                                adq     48, R0
+                                stb     R0, (R4)
+                                adq     1, R4
+                                ldw     R0, (SP)+
+                                jeq     #print_fraction_end - $ - 2
+                                cmp     R3, R4
+                                jne     #print_fraction_loop - $ - 2
+        print_fraction_end
+                                ldq     0, R0
+                                stb     R0, (R4)
+                                adq     1, R3
+                                ldw     SP, R3
+
+                                ldw     R0, SP
+                                adq     -8, R0
+                                trp     #66
+
+                                ldw     R4, (SP)+
+                                ldw     R3, (SP)+
+                                ldw     R2, (SP)+
+                                ldw     R1, (SP)+
+                                ldw     R0, (SP)+
+                                ldw     BP, (SP)+
+                                rts
+
+print_fix
+                                stw     BP, -(SP)
+                                ldw     BP, SP
+                                stw     R0, -(SP)
+                                stw     R1, -(SP)
+                                stw     R2, -(SP)
+
+                                ldw     R1, (BP)6   // integer part
+                                ldw     R2, (BP)4   // fractionnal part
+
+                                tst     R1
+                                bge     print_fix_positive - $ - 2  // if R1 < 0 :
+                                neg     R2, R2                      // neg. the fractionnal part
+
+                                tst     R2
+                                beq     print_fix_positive - $ - 2  // if R1 < 0 and R2 != 0
+                                adq     1, R1                       // add 1 to the integer part
+
+                                tst     R1
+                                bne     print_fix_positive - $ - 2  // finally, if we have R1 == 0 :
+                                ldw     R0, #rodata_minus_                 // print the minus '-' character
+                                stw     R0, -(SP)
+                                jsr     @print_string
+                                adq     2, SP
+        print_fix_positive
+                                stw     R1, -(SP)
+                                jsr     @print_short
+                                adq     2, SP
+
+                                ldw     R0, #rodata_point_
+                                stw     R0, -(SP)
+                                jsr     @print_string
+                                adq     2, SP
+
+                                stw     R2, -(SP)
+                                jsr     @print_fraction
+                                adq     2, SP
+
+                                ldw     R2, (SP)+
+                                ldw     R1, (SP)+
+                                ldw     R0, (SP)+
+                                ldw     BP, (SP)+
+                                rts
+
+
+abs_short
+                                stw     BP, -(SP)
+                                ldw     BP, SP
+                                stw     R1, -(SP)
+
+                                // short
+                                ldw     R0, (BP)4
+                                // sign bit
+                                ani     R0, R1, #0x8000
+                                // positive
+                                beq     abs_short_exit - $ - 2
+                                // negative
+                                neg     R0, R0
+        abs_short_exit
+
+                                ldw     R1, (SP)+
+                                ldw     BP, (SP)+
+                                rts
+
+sign_short
+                                stw     BP, -(SP)
+                                ldw     BP, SP
+
+                                // short
+                                ldw     R0, (BP)4
+                                // zero
+                                beq     sign_short_zero - $ - 2
+                                // sign bit
+                                ani     R0, R1, #0x8000
+                                // positive
+                                beq     sign_short_positive - $ - 2
+                                // negative
+                                ldq     -1, R0
+                                bmp     sign_short_exit - $ - 2
+        sign_short_zero
+                                ldq     0, R0
+                                bmp     sign_short_exit - $ - 2
+        sign_short_positive
+                                ldq     1, R0
+        sign_short_exit
+
+                                ldw     BP, (SP)+
+                                rts
+
+abs_div
+// divide (BP)6 by (BP)4
+// by considering unsigned numbers
+// and store the quotient in (BP)4
+// and the rest in (BP)6
+                                stw     BP, -(SP)
+                                ldw     BP, SP
+                                stw     R0, -(SP)
+                                stw     R1, -(SP)
+                                stw     R2, -(SP)
+                                stw     R3, -(SP)
+                                stw     R4, -(SP)
+                                stw     R5, -(SP)
+
+                                ldq     0, R0
+                                ldw     R1, (BP)6
+                                ldw     R2, (BP)4
+
+                                // We want to do R1 / R2
+
+                                cmp     R1, R0
+                                jge     #pos_case - $ - 2
+                                cmp     R2, R0
+                                jge     #negpos - $ - 2
+
+                                // R1 < 0 and R2 < 0
+                                cmp     R1, R2
+                                jge     #sup_case - $ - 2
+
+                                stw     R1, (BP)6      // rest
+                                ldq     0, R1
+                                stw     R1, (BP)4      // quotient
+                                jmp     #abs_div_exit - $ - 2
+                    sup_case
+                                sub     R1, R2, R1
+                                stw     R1, (BP)6      // rest
+                                ldq     1, R1
+                                stw     R1, (BP)4      // quotient
+                                jmp     #abs_div_exit - $ - 2
+
+            negpos              // R1 < 0 and R2 >= 0
+                                div     R1, R2, R0
+                                ldq     0, R3
+                                cmp     R1, R3
+                                beq     4
+                                add     R1, R2, R1
+                                adq     -1, R0
+
+                                // division of 2^16 by R2
+                                ldw     R4, #0x7fff
+                                div     R4, R2, R5
+                                ldw     R3, #0x4000
+                                cmp     R2, R3
+                                jeq     #negpos_exception - $ - 2
+
+                                ldq     2, R3
+                                mul     R5, R3, R5
+                                mul     R4, R3, R4
+                                add     R4, R3, R4
+                                div     R4, R2, R3
+                                add     R5, R3, R5
+                                jmp     #negpos_stack - $ - 2
+
+                    negpos_exception
+                                ldq     4, R5
+                                ldq     0, R4
+                                // R4 <- 2^16 % R2
+                                // R5 <- 2^16 // R2
+                    negpos_stack
+                                add     R0, R5, R0
+                                add     R1, R4, R1
+                                div     R1, R2, R5
+                                add     R0, R5, R0
+
+                                stw     R1, (BP)6      // rest
+                                stw     R0, (BP)4      // quotient
+                                jmp     #abs_div_exit - $ - 2
+            pos_case
+                                cmp     R2, R0
+                                jge     #pospos - $ - 2
+
+                                // R1 >= 0 and R2 < 0
+                                stw     R1, (BP)6      // rest
+                                ldq     0, R1
+                                stw     R1, (BP)4      // quotient
+                                jmp     #abs_div_exit - $ - 2
+            pospos
+                                // R1 >= 0 and R2 >= 0
+                                div     R1, R2, R0
+                                stw     R1, (BP)6      // rest
+                                stw     R0, (BP)4      // quotient
+
+            abs_div_exit
+                                ldw     R5, (SP)+
+                                ldw     R4, (SP)+
+                                ldw     R3, (SP)+
+                                ldw     R2, (SP)+
+                                ldw     R1, (SP)+
+                                ldw     R0, (SP)+
+                                ldw     BP, (SP)+
+                                rts
+
+eq_fix
+// eq_fix(a, b) : a == b
+                                stw     BP, -(SP)
+                                ldw     BP, SP
+                                stw     R0, -(SP)
+                                stw     R1, -(SP)
+                                stw     R2, -(SP)
+                                stw     R3, -(SP)
+
+                                // load a
+                                ldw     R0, (BP)10  // a1
+                                ldw     R1, (BP)8   // a2
+
+                                // load b
+                                ldw     R2, (BP)6   // b1
+                                ldw     R3, (BP)4   // b2
+
+                                cmp     R0, R2
+                                beq     4
+                                ldq     0, R0
+                                bmp     eq_fix_exit - $ - 2
+
+                                cmp     R1, R3
+                                beq     4
+                                ldq     0, R0
+                                bmp     eq_fix_exit - $ - 2
+                                ldq     1, R0
+        eq_fix_exit
+                                // store boolean
+                                stw     R0, (BP)4
+
+                                ldw     R3, (SP)+
+                                ldw     R2, (SP)+
+                                ldw     R1, (SP)+
+                                ldw     R0, (SP)+
+                                ldw     BP, (SP)+
+                                rts
+
+ge_fix
+// ge_fix(a, b) : a >= b
+                                stw     BP, -(SP)
+                                ldw     BP, SP
+                                stw     R0, -(SP)
+                                stw     R1, -(SP)
+                                stw     R2, -(SP)
+                                stw     R3, -(SP)
+                                stw     R4, -(SP)
+                                stw     R5, -(SP)
+
+                                // load a
+                                ldw     R0, (BP)10  // a1
+                                ldw     R1, (BP)8   // a2
+
+                                // load b
+                                ldw     R2, (BP)6   // b1
+                                ldw     R3, (BP)4   // b2
+
+                                ldq     0, R5       // boolean result
+
+                                cmp     R0, R2
+                                blw     ge_fix_exit - $ - 2
+                                cmp     R0, R2
+                                beq     4
+                                ldq     1, R5
+                                bmp     ge_fix_exit - $ - 2
+
+                                tst     R1
+                                blw     ge_fix_negative - $ - 2
+                                tst     R3
+                                bge     ge_fix_other - $ - 2
+                                bmp     ge_fix_exit - $ - 2
+        ge_fix_negative
+                                tst     R3
+                                blw     ge_fix_other - $ - 2
+                                ldq     1, R5
+                                bmp     ge_fix_exit - $ - 2
+        ge_fix_other
+                                cmp     R1, R3
+                                blw     2
+                                ldq     1, R5
+        ge_fix_exit
+                                // store boolean
+                                stw     R5, (BP)4
+
+                                ldw     R5, (SP)+
+                                ldw     R4, (SP)+
+                                ldw     R3, (SP)+
+                                ldw     R2, (SP)+
+                                ldw     R1, (SP)+
+                                ldw     R0, (SP)+
+                                ldw     BP, (SP)+
+                                rts
+
+gt_fix
+// ge_fix(a, b) : a > b
+                                stw     BP, -(SP)
+                                ldw     BP, SP
+                                stw     R0, -(SP)
+                                stw     R1, -(SP)
+                                stw     R2, -(SP)
+                                stw     R3, -(SP)
+                                stw     R4, -(SP)
+                                stw     R5, -(SP)
+
+                                // load a
+                                ldw     R0, (BP)10  // a1
+                                ldw     R1, (BP)8   // a2
+
+                                // load b
+                                ldw     R2, (BP)6   // b1
+                                ldw     R3, (BP)4   // b2
+
+                                ldq     0, R5       // boolean result
+
+                                cmp     R0, R2
+                                blw     gt_fix_exit - $ - 2
+                                cmp     R0, R2
+                                beq     4
+                                ldq     1, R5
+                                bmp     gt_fix_exit - $ - 2
+
+                                tst     R1
+                                blw     gt_fix_negative - $ - 2
+                                tst     R3
+                                bge     gt_fix_other - $ - 2
+                                bmp     gt_fix_exit - $ - 2
+        gt_fix_negative
+                                tst     R3
+                                blw     gt_fix_other - $ - 2
+                                ldq     1, R5
+                                bmp     gt_fix_exit - $ - 2
+        gt_fix_other
+                                cmp     R1, R3
+                                ble     2
+                                ldq     1, R5
+        gt_fix_exit
+                                // store boolean
+                                stw     R5, (BP)4
+
+                                ldw     R5, (SP)+
+                                ldw     R4, (SP)+
+                                ldw     R3, (SP)+
+                                ldw     R2, (SP)+
+                                ldw     R1, (SP)+
+                                ldw     R0, (SP)+
+                                ldw     BP, (SP)+
+                                rts
+
+neg_fix
+// neg_fix(a) : a <- -a
+                                stw     BP, -(SP)
+                                ldw     BP, SP
+                                stw     R0, -(SP)
+                                stw     R1, -(SP)
+
+                                // load a
+                                ldw     R0, (BP)6   // integer part
+                                ldw     R1, (BP)4   // radix part
+
+                                // a <- -a
+                                neg     R0, R0
+                                neg     R1, R1
+                                tst     R1
+                                beq     2
+                                adq     -1, R0
+
+                                // store a
+                                stw     R0, (BP)6
+                                stw     R1, (BP)4
+
+                                ldw     R1, (SP)+
+                                ldw     R0, (SP)+
+                                ldw     BP, (SP)+
+                                rts
+
+add_fix
+// add_fix(a, b) : b <- a + b
+                                stw     BP, -(SP)
+                                ldw     BP, SP
+
+                                stw     R0, -(SP)
+                                stw     R1, -(SP)
+                                stw     R2, -(SP)
+                                stw     R3, -(SP)
+
+                                // loading a
+                                ldw     R0, (BP)10
+                                ldw     R1, (BP)8
+
+                                // loading b
+                                ldw     R2, (BP)6
+                                ldw     R3, (BP)4
+
+                                // a <- a + b
+                                add     R1, R3, R1
+                                bcc     2
+                                adq     1, R0
+                                add     R0, R2, R0
+
+                                // storing a
+                                stw     R1, (BP)4
+                                stw     R0, (BP)6
+
+                                ldw     R3, (SP)+
+                                ldw     R2, (SP)+
+                                ldw     R1, (SP)+
+                                ldw     R0, (SP)+
+                                ldw     BP, (SP)+
+                                rts
+
+big_mul
+// big_mul(a, b, *c) : *c <- a * b
+// multiply two words a and b into two words c1 and c2
+// for big multiplications ( *c = c1, *(c+2) = c2 )
+// so that we have c2*65536 + c1 = a*b
+                                stw     BP, -(SP)
+                                ldw     BP, SP
+
+                                stw     R0, -(SP)
+                                stw     R1, -(SP)
+                                stw     R2, -(SP)
+                                stw     R3, -(SP)
+                                stw     R4, -(SP)
+                                stw     R5, -(SP)
+
+                                // loading a and b
+                                ldw     R0, (BP)8   // a
+                                ldw     R1, (BP)6   // b
+                                // initializing the result to 0
+                                ldq     0, R4       // c1
+                                ldq     0, R5       // c2
+
+                                // Here we have a = a1*256 + a2
+                                //          and b = b1*256 + b2
+                                // It's important to notice that :
+                                //   a, b, c1, c2 are 16 bits long
+                                //   a1, a2, b1, b2 are 8 bits-long subdivisions of a and b
+
+                                // let's compute 65536*a1*b1
+                                swb     R0, R2
+                                ani     R2, R2, #0x00ff // R2 <- a1
+                                swb     R1, R3
+                                ani     R3, R3, #0x00ff // R3 <- b1
+                                mul     R2, R3, R2
+                                add     R4, R2, R4      // R4 <- R4 + R2*R3
+
+                                // 256*a1*b2
+                                swb     R0, R2
+                                ani     R2, R2, #0x00ff // R2 <- a1
+                                ani     R1, R3, #0x00ff // R3 <- b2 ( = R1 & 0x00ff)
+                                mul     R2, R3, R2      // R2 <- a1*b2
+                                swb     R2, R3
+                                ani     R3, R3, #0x00ff
+                                add     R4, R3, R4      // R4 <- R4 + a1*b2//256
+                                swb     R2, R3
+                                ani     R3, R3, #0xff00
+                                add     R5, R3, R5      // R5 <- R5 + a1*b2*256
+
+                                // 256*b1*a2
+                                swb     R1, R2
+                                ani     R2, R2, #0x00ff // R2 <- b1
+                                ani     R0, R3, #0x00ff // R3 <- a2 ( = R1 & 0x00ff)
+                                mul     R2, R3, R2      // R2 <- b1*a2
+                                swb     R2, R3
+                                ani     R3, R3, #0x00ff
+                                add     R4, R3, R4      // R4 <- R4 + b1*a2//256
+                                swb     R2, R3
+                                ani     R3, R3, #0xff00
+                                add     R5, R3, R5      // R5 <- R5 + b1*a2*256
+                                bcc     2
+                                adq     1, R4           // add carry to R4
+
+                                // a2*b2
+                                ldw     R3, #0x00ff
+                                and     R0, R3, R2  // R2 <- a2 ( = R0 & 0x00ff)
+                                and     R1, R3, R3  // R3 <- b2 ( = R1 & 0x00ff)
+                                mul     R2, R3, R3
+                                add     R5, R3, R5  // R5 <- R5 + R2*R3
+                                bcc     2
+                                adq     1, R4       // add carry to R4
+
+                                // storing c
+                                ldw     R2, (BP)4
+                                stw     R5, (R2)2   // c2
+                                stw     R4, (R2)    // c1
+
+                                ldw     R5, (SP)+
+                                ldw     R4, (SP)+
+                                ldw     R3, (SP)+
+                                ldw     R2, (SP)+
+                                ldw     R1, (SP)+
+                                ldw     R0, (SP)+
+                                ldw     BP, (SP)+
+                                rts
+
+mul_fix
+// add_fix(a, b) : b <- a * b
+// the exceeding is stored in (BP)8
+                                stw     BP, -(SP)
+                                ldw     BP, SP
+
+                                stw     R0, -(SP)
+                                stw     R1, -(SP)
+                                stw     R2, -(SP)
+                                stw     R3, -(SP)
+                                stw     R4, -(SP)
+                                stw     R5, -(SP)
+                                stw     R6, -(SP)
+                                stw     R7, -(SP)
+                                stw     R8, -(SP)
+                                stw     R9, -(SP)
+
+                                // load a
+                                ldw     R0, (BP)10  // a1
+                                ldw     R1, (BP)8   // a2
+
+                                // load b
+                                ldw     R2, (BP)6   // a1
+                                ldw     R3, (BP)4   // a2
+
+                                // initializing c to 0
+                                ldq     0, R6       // c1
+                                ldq     0, R7       // c2
+
+                                // test if a xor b is negative
+                                xor     R0, R2, R8
+
+                                ldq     0, R9       // carry
+
+                                // if a < 0 : a = -a
+                                tst     R0
+                                bge     10
+                                neg     R0, R0
+                                neg     R1, R1
+                                tst     R1
+                                beq     2
+                                adq     -1, R0
+
+                                // if b < 0 : b = -b
+                                tst     R2
+                                bge     10
+                                neg     R2, R2
+                                neg     R3, R3
+                                tst     R3
+                                beq     2
+                                adq     -1, R2
+
+                                // a1*b1
+                                adq     -4, SP
+                                ldw     R4, SP
+                                stw     R0, -(SP)   // a1
+                                stw     R2, -(SP)   // b1
+                                stw     R4, -(SP)   // pointer to result
+                                jsr     @big_mul
+                                adq     10, SP
+                                ldw     R5, (R4)2   // loading result
+                                ldw     R4, (R4)
+                                add     R9, R4, R9
+                                add     R6, R5, R6
+
+                                // 2^(-16)*a2*b1
+                                adq     -4, SP
+                                ldw     R4, SP
+                                stw     R1, -(SP)   // a2
+                                stw     R2, -(SP)   // b1
+                                stw     R4, -(SP)   // pointer to result
+                                jsr     @big_mul
+                                adq     10, SP
+                                ldw     R5, (R4)2   // loading result
+                                ldw     R4, (R4)
+                                add     R6, R4, R6
+                                bcc     2
+                                adq     1, R9
+                                add     R7, R5, R7
+
+                                // 2^(-16)*a1*b2
+                                adq     -4, SP
+                                ldw     R4, SP
+                                stw     R0, -(SP)   // a1
+                                stw     R3, -(SP)   // b2
+                                stw     R4, -(SP)   // pointer to result
+                                jsr     @big_mul
+                                adq     10, SP
+                                ldw     R5, (R4)2   // loading result
+                                ldw     R4, (R4)
+                                add     R6, R4, R6
+                                bcc     2
+                                adq     1, R9
+                                add     R7, R5, R7
+                                bcc     2
+                                adq     1, R6       // add carry to R6
+
+                                // 2^(-32)*a2*b2
+                                adq     -4, SP
+                                ldw     R4, SP
+                                stw     R1, -(SP)   // a2
+                                stw     R3, -(SP)   // b2
+                                stw     R4, -(SP)   // pointer to result
+                                jsr     @big_mul
+                                adq     10, SP
+                                ldw     R5, (R4)2   // loading result
+                                ldw     R4, (R4)
+                                add     R7, R4, R7
+                                bcc     2
+                                adq     1, R6       // add carry to R6
+
+                                // if necessary : c = -c
+                                tst     R8
+                                bge     10
+                                neg     R6, R6
+                                neg     R7, R7
+                                tst     R7
+                                beq     2
+                                adq     -1, R6
+
+                                // storing c
+                                stw     R7, (BP)4   // c2
+                                stw     R6, (BP)6   // c1
+                                stw     R9, (BP)8   // carry flag
+
+                                ldw     R9, (SP)+
+                                ldw     R8, (SP)+
+                                ldw     R7, (SP)+
+                                ldw     R6, (SP)+
+                                ldw     R5, (SP)+
+                                ldw     R4, (SP)+
+                                ldw     R3, (SP)+
+                                ldw     R2, (SP)+
+                                ldw     R1, (SP)+
+                                ldw     R0, (SP)+
+                                ldw     BP, (SP)+
+                                rts
+
+div_fix
+// div_fix(a, b) : b <- a / b
+                                stw     BP, -(SP)
+                                ldw     BP, SP
+                                stw     R0, -(SP)
+                                stw     R1, -(SP)
+                                stw     R2, -(SP)
+                                stw     R3, -(SP)
+                                stw     R4, -(SP)
+                                stw     R5, -(SP)
+                                stw     R6, -(SP)
+                                stw     R7, -(SP)
+                                stw     R8, -(SP)
+                                stw     R9, -(SP)
+
+                                // load a
+                                ldw     R0, (BP)10  // a1
+                                ldw     R1, (BP)8   // a2
+
+                                // load b
+                                ldw     R2, (BP)6   // b1
+                                ldw     R3, (BP)4   // b2
+
+                                // initializing c to 0
+                                ldq     0, R4       // c1
+                                ldq     0, R5       // c2
+
+                                // test if a xor b is negative
+                                xor     R0, R2, R8
+
+                                // if a < 0 : a = -a
+                                tst     R0
+                                bge     10
+                                neg     R0, R0
+                                neg     R1, R1
+                                tst     R1
+                                beq     2
+                                adq     -1, R0
+
+                                // if b < 0 : b = -b
+                                tst     R2
+                                bge     10
+                                neg     R2, R2
+                                neg     R3, R3
+                                tst     R3
+                                beq     2
+                                adq     -1, R2
+
+                                // guessing the integer part
+                                ldw     R6, #0x4000
+        div_fix_int_loop
+                                add     R4, R6, R4
+                                // multiplying b and c
+                                stw     R2, -(SP)
+                                stw     R3, -(SP)
+                                stw     R4, -(SP)
+                                stw     R5, -(SP)
+                                jsr     @mul_fix
+                                // if there's an exceeding, then c is too high
+                                ldw     R7, (SP)4
+                                beq     4
+                                adq     2, SP
+                                bmp     div_fix_int_too_high - $ - 2
+                                // if the multiplication is negative => overflow
+                                ldw     R7, (SP)2
+                                bge     4
+                                adq     2, SP
+                                bmp     div_fix_int_too_high - $ - 2
+                                // compare a and the result
+                                ldw     R9, (SP)        // saving fractionnal part
+                                stw     R0, (SP)6
+                                stw     R1, (SP)4
+                                jsr     @ge_fix         // if a >= result
+                                ldw     R7, (SP)+
+                                bne     div_fix_int_result_changed - $ - 2
+        div_fix_int_too_high
+                                neg     R6, R6
+                                add     R4, R6, R4
+                                neg     R6, R6
+                                adq     6, SP           // schhht, I know exactly what I am doing
+                                bmp     div_fix_int_next - $ - 2
+        div_fix_int_result_changed
+                                stw     R9, -(SP)       // restoring fractionnal part
+                                jsr     @eq_fix
+                                ldw     R7, (SP)+
+                                adq     6, SP
+                                tst     R7
+                                bne     div_fix_exit - $ - 2
+        div_fix_int_next
+                                ldq     2, R7
+                                div     R6, R7, R7
+                                ldw     R6, R7
+                                bne     div_fix_int_loop - $ - 2
+
+
+                                // guessing the fractionnal part
+                                ldw     R6, #0x8000
+        div_fix_frac_loop
+                                add     R5, R6, R5
+                                // multiplying b and c
+                                stw     R2, -(SP)
+                                stw     R3, -(SP)
+                                stw     R4, -(SP)
+                                stw     R5, -(SP)
+                                jsr     @mul_fix
+                                // if there's an exceeding, then c is too high
+                                ldw     R7, (SP)4
+                                beq     4
+                                adq     2, SP
+                                bmp     div_fix_frac_too_high - $ - 2
+                                // if the multiplication is negative => overflow
+                                ldw     R7, (SP)2
+                                bge     4
+                                adq     2, SP
+                                bmp     div_fix_frac_too_high - $ - 2
+                                // compare a and the result
+                                ldw     R9, (SP)        // saving fractionnal part
+                                stw     R0, (SP)6
+                                stw     R1, (SP)4
+                                jsr     @ge_fix         // if a >= result
+                                ldw     R7, (SP)+
+                                bne     div_fix_frac_result_changed - $ - 2
+        div_fix_frac_too_high
+                                neg     R6, R6
+                                add     R5, R6, R5
+                                neg     R6, R6
+                                adq     6, SP           // I know I know
+                                bmp     div_fix_frac_next - $ - 2
+        div_fix_frac_result_changed
+                                stw     R9, -(SP)       // restoring fractionnal part
+                                jsr     @eq_fix
+                                ldw     R7, (SP)+
+                                adq     6, SP
+                                tst     R7
+                                bne     div_fix_exit - $ - 2
+        div_fix_frac_next
+                                ldq     2, R7
+                                div     R6, R7, R7
+                                ani     R7, R6, #0x7fff
+                                bne     div_fix_frac_loop - $ - 2
+        div_fix_exit
+                                // if necessary : c = -c
+                                tst     R8
+                                bge     10
+                                neg     R4, R4
+                                neg     R5, R5
+                                tst     R5
+                                beq     2
+                                adq     -1, R4
+
+                                // store c
+                                stw     R4, (BP)6   // c1
+                                stw     R5, (BP)4   // c2
+
+                                ldw     R9, (SP)+
+                                ldw     R8, (SP)+
+                                ldw     R7, (SP)+
+                                ldw     R6, (SP)+
+                                ldw     R5, (SP)+
+                                ldw     R4, (SP)+
+                                ldw     R3, (SP)+
+                                ldw     R2, (SP)+
+                                ldw     R1, (SP)+
+                                ldw     R0, (SP)+
+                                ldw     BP, (SP)+
+                                rts
+
+allocate_array
+// allocate an array at the correct position
+// It instantiates the bounds, the offset, and rearrange the global offset
+                                // store and load the link
+                                stw     BP, -(SP)
+                                ldw     BP, SP  // arguments counter
+                                adq     2, BP   // remove rts (burn out call for optimization)
+
+                                // stash those registers
+                                stw     R0, -(SP)
+                                stw     R1, -(SP)
+                                stw     R2, -(SP)
+                                stw     R3, -(SP)
+                                stw     R4, -(SP)
+                                stw     R5, -(SP)
+                                stw     R6, -(SP)
+                                stw     R7, -(SP)
+                                stw     R8, -(SP)
+                                stw     R11, -(SP)
+                                stw     R13,-(SP)
+
+                                // load the static array address
+                                ldw     R0, (BP)2   // address of the static array in R0
+                                ldw     R13,(BP)4   // address of the error message
+
+                                // load number of dimensions declared
+                                ldw     R1, (R0)2   // dimensions in R1, we are guaranteed at least 1 dimension
+
+                                // create new array
+                                    // load the global offset into the array static
+                                    ldw     R8, @heap+2        // global offset in R8
+                                    stw     R8, (R0)4
+                                    // load the address of the dynamic array
+                                    ldw     R2, #array_section // address of the section
+                                    add     R8,R2,R2           // address of the array in R2
+                                    // initialize the counter for the bounds
+                                    ldq     0, R3              // counter for loop in R3
+                                    ldw     R7,(R0)            // size of the array in R7
+
+                                allocate_array_for_bounds_body
+                                    adq     4, BP       // remove bounds offset or (address, error_message)
+                                    ldw     R4, (BP)4   // load bound inf (inverted)   in R4
+                                    stw     R4, (R2)    // store the bound inf (normal)
+                                    ldw     R5, (BP)2   // load bound sup (inverted)   in R5
+                                    stw     R5, (R2)2   // store the bound sup (normal)
+                                    // verification of the bounds
+                                    cmp     R5,R4       // compare R5 - R4 with 0
+                                    // we ensure lower<upper
+                                    jle     #incorrect_bounds_order - $ - 2 // could be reduced to blw
+                                    tst     R4          // compare lower bound to 0
+                                    // because if lower is negative we exit, lower can only be 0 or more so as upper
+                                    jlw     #incorrect_bounds_negative - $ - 2  // could be reduced to blw
+                                    sub     R5,R4,R6    // get the difference between the two bounds
+                                    // since we have a guarantee 0<=R4<R5, we know that R5-R4 cant be negative, even with overflow since then R5 would be negative
+                                    mul     R6,R7,R7    // make the size of the array as precedent size times current bounds difference
+                                    tst     R7          // if R7 is negative, we have a too large of array
+                                    jlw     #array_too_large - $ - 2 // could be reduced to blw
+                                    adq     4, R2       // offset the array section pointer
+                                    adq     1,R3        // increase loop counter
+                                allocate_array_for_bounds_cond
+                                    cmp     R1,R3       // compare R1-R3 or dimension-counter to 0
+                                    bgt     allocate_array_for_bounds_body  - $ -2  // if there is still dimensions
+
+                                // add an array globally only if the array is not re-declared
+                                ldw     R11,(R0)6       // get the current size (0 means new)
+                                tst R11
+                                bne     allocate_no_add_array - $ - 2
+                                ldw     R11, @heap       // load number of array in heap
+                                adq     1, R11           // add one more array
+                                stw     R11, @heap       // store the new information
+                           allocate_no_add_array
+                                // change array size
+                                add     R1,R1,R1        // double dimension size because 2 is the size of a word
+                                add     R1,R1,R1        // double dimension size because 2 bounds
+                                add     R1,R7,R7        // add the bound size to the size of array
+                                stw     R7, (R0)6       // store the size of the array
+                                // change global offset
+                                add     R7, R8, R8      // increase global offset
+                                stw     R8, @heap+2     // store global offset back
+
+                                // restore the registers
+                                ldw     R13,(SP)+
+                                ldw     R11,(SP)+
+                                ldw     R8, (SP)+
+                                ldw     R7, (SP)+
+                                ldw     R6, (SP)+
+                                ldw     R5, (SP)+
+                                ldw     R4, (SP)+
+                                ldw     R3, (SP)+
+                                ldw     R2, (SP)+
+                                ldw     R1, (SP)+
+                                ldw     R0, (SP)+
+                                // restore link
+                                ldw     BP, (SP)+
+                                // return
+                                rts
+        incorrect_bounds_order      // just load the correct message in R0
+                                ldw     R0, #rodata_bounds_order_
+                                bmp     incorrect_array - $ - 2
+        incorrect_bounds_negative   // just load the correct message in R0
+                                ldw     R0, #rodata_bounds_negative_
+                                bmp     incorrect_array - $ - 2
+        array_too_large             // just load the correct message in R0
+                                ldw     R0, #rodata_array_too_large_
+                                bmp     incorrect_array - $ - 2
+        incorrect_array         // this function will exit and will terminate the program, we dont make any safety and
+                                // just throw stuff on the stack, reaching for exit as fast as possible
+                                // R13 contains the address to the error message for the array and R3 the pair number
+                                stw     R0, -(SP)
+                                jsr     @print_string
+                                adq     1,R3
+                                stw     R3, -(SP)
+                                jsr     @print_short
+                                stw     R13, -(SP)
+                                jsr     @print_string
+                                jsr     @print_newline
+                                adq     6,SP        // ok I lied, i am not that evil
+                                jea     @exit_
+
+set_var_array
+// store a variable at the right place in the array
+// index are stacked in the other order so a[4][3][1] give bottom,4,3,1,top stack
+// stack must be as value(s), index(es),dimension,error_message,array_label
+                                // store and load the link
+                                stw     BP, -(SP)
+                                ldw     BP, SP  // arguments counter
+                                adq     2, BP   // remove rts (burn out call for optimization)
+
+                                // stash those registers
+                                stw     R0, -(SP)
+                                stw     R1, -(SP)
+                                stw     R2, -(SP)
+                                stw     R3, -(SP)
+                                stw     R4, -(SP)
+                                stw     R5, -(SP)
+                                stw     R6, -(SP)
+                                stw     R7, -(SP)
+                                stw     R8, -(SP)
+                                stw     R13,-(SP)
+
+                                // load the static array address
+                                ldw     R0, (BP)2   // address of the static array in R0
+                                ldw     R13,(BP)4   // address of the error message in R13
+                                adq     4,BP        // remove (address, error_message)
+
+                                // load number of dimensions declared
+                                ldw     R3, (BP)2   // advertised dimensions in R3, we are guaranteed at least 1 dimension
+                                ldw     R2, (R0)2      // actual dimensions in R2
+                                cmp     R2,R3       // compare R2 - R3 or actual-advertised to 0
+                                jlw     #set_var_too_many_dimensions - $ - 2
+
+                                // set dimension offset
+                                adq     -1,R2       // remove the last dimension for first loop
+                                add     R2,R2,R2    // get bounds offset times 2 for size
+                                add     R2,R2,R2    // get bounds offset times 2 because 2 bounds
+
+                                // load array offset
+                                ldw     R7, (R0)4      // offset of array in R7
+                                add     R7,R2,R2       // add bounds offset to array offset
+                                // in R2 we have array offset + offset of bounds
+
+                                // load array section
+                                ldw     R7, #array_section
+                                add     R2,R7,R2
+                                // R2 has the adress of the #array_section+array_offset + offset of bounds - 1 dimension (4)
+
+                                ldw     R8, R2      // save current R2 in R8
+                                adq     4,  R8      // restore one dimension to R8
+
+                                ldw     R1, (R0)    // size of current sub_array (first its the size of the type)
+                                ldq     0, R7       // offset for set var   in R7
+
+                                // we know the index comes right like we want, last first
+                                set_var_for_bounds_body
+                                    adq     2, BP       // remove index or (dimension)
+                                    ldw     R4,(R2)     // load lower bound in R4
+                                    ldw     R5,(R2)2    // load upper bound in R5
+                                    ldw     R6,(BP)2    // load index       in R6
+                                    // verification of the bounds
+                                    cmp     R6,R4       // compare R6 - R4 or index-lower with 0
+                                    // we ensure lower<=index
+                                    jlw     #incorrect_index_lower - $ - 2  // could be reduced to blw
+                                    cmp     R6,R5       // compare R6 - R5 or index-upper with 0
+                                    // we ensure index<upper
+                                    jge     #incorrect_index_upper - $ - 2 // could be reduced to bge
+                                    // we have ensured 0<=lower<=index<upper
+
+                                    sub     R6,R4,R6    // get the difference between the index and the lower
+                                    mul     R6,R1,R6    // multiply the difference with the last size
+                                    add     R7,R6,R7    // add that to the offset
+
+                                    sub     R5,R4,R4    // put the difference between the bounds in R4
+                                    mul     R1,R4,R1    // multiply last size
+
+                                    adq     -4, R2      // offset the bounds pointer to lower
+                                    adq     -1,R3       // decrease dimension
+
+                                set_var_for_bounds_cond
+                                    tst     R3          // test dimensions>0
+                                    bgt     set_var_for_bounds_body  - $ -2  // if there is still dimensions
+
+
+                                add     R8,R7,R2        // add variable offset to array full offset
+                                ldw     R4,(R0)         // load size
+                                ldq     2,R5
+                                cmp     R4,R5           // compare R4 - R5 or size of array (2 or 4) and 2
+                                beq     set_var_not_floating - $ - 2    // if 0 then R4-2=0 so array is integer
+                                ldw     R1,(BP)6        // load floating variable to change
+                                stw     R1,(R2)2        // store the variable at the correct offset
+                       set_var_not_floating
+                                ldw     R1,(BP)4        // load actual variable to change
+                                stw     R1,(R2)         // store the variable at the correct offset
+
+                                // restore the registers
+                                ldw     R13,(SP)+
+                                ldw     R8, (SP)+
+                                ldw     R7, (SP)+
+                                ldw     R6, (SP)+
+                                ldw     R5, (SP)+
+                                ldw     R4, (SP)+
+                                ldw     R3, (SP)+
+                                ldw     R2, (SP)+
+                                ldw     R1, (SP)+
+                                ldw     R0, (SP)+
+                                // restore link
+                                ldw     BP, (SP)+
+                                // return
+                                rts
+        incorrect_index_lower
+                                        ldw     R0, #rodata_array_lower_bound_
+                                        bmp     incorrect_set_var - $ - 2
+        incorrect_index_upper
+                                        ldw     R0, #rodata_array_upper_bound_
+                                        bmp     incorrect_set_var - $ - 2
+        set_var_too_many_dimensions
+                                        ldw     R0, #rodata_array_set_var_too_many_dimensions_
+                                        bmp     incorrect_set_var - $ - 2
+        incorrect_set_var               // this function will exit and will terminate the program, we dont make any safety and
+                                        // just throw stuff on the stack, reaching for exit as fast as possible
+                                        // R13 contains the address to the error message for the array and R3 the pair number
+                                        stw     R0, -(SP)
+                                        jsr     @print_string
+                                        adq     2,SP
+                                        stw     R3, -(SP)
+                                        jsr     @print_short
+                                        adq     2,SP
+                                        stw     R13, -(SP)
+                                        jsr     @print_string
+                                        adq     2,SP
+                                        jsr     @print_newline
+                                        jea     @exit_
+
+get_var_array
+// get a variable of the right place in the array into a variable (s)
+// index are stacked in the other order so a[4][3][1] give bottom,4,3,1,top stack
+// stack must be as index(es),dimension,error_message,array_label
+                                // store and load the link
+                                stw     BP, -(SP)
+                                ldw     BP, SP  // arguments counter
+                                adq     2, BP   // remove rts (burn out call for optimization)
+
+                                // stash those registers
+                                // R0 and R1 will be overwritten, we do not guarantee their safety
+                                stw     R2, -(SP)
+                                stw     R3, -(SP)
+                                stw     R4, -(SP)
+                                stw     R5, -(SP)
+                                stw     R6, -(SP)
+                                stw     R7, -(SP)
+                                stw     R8, -(SP)
+                                stw     R13,-(SP)
+
+                                // load the static array address
+                                ldw     R0, (BP)2   // address of the static array in R0
+                                ldw     R13,(BP)4   // address of the error message in R13
+                                adq     4,BP        // remove (address, error_message)
+
+                                // load number of dimensions declared
+                                ldw     R3, (BP)2   // advertised dimensions in R3, we are guaranteed at least 1 dimension
+                                ldw     R2, (R0)2   // actual dimensions in R2
+                                cmp     R2,R3       // compare R2 - R3 or actual-advertised to 0
+                                jlw     #set_var_too_many_dimensions - $ - 2
+
+
+                                adq     -1,R2       // remove the last dimension for first loop
+                                add     R2,R2,R2    // get bounds offset times 2 for size
+                                add     R2,R2,R2    // get bounds offset times 2 because 2 bounds
+                                // load array offset
+                                ldw     R7, (R0)4      // offset of array in R7
+                                add     R7,R2,R2       // add bounds offset to array offset
+                                // in R2 we have array offset + offset of bounds
+
+                                ldw     R7, #array_section
+                                add     R2,R7,R2
+                                // R2 has the adress of the #array_section+array_offset + offset of bounds
+
+                                ldw     R8, R2      // save current R2 in R8
+                                adq     4, R8       // offset R8 by 1 dimension
+                                ldw     R1, (R0)    // size of current sub_array (first its the size of the type)
+                                ldq     0, R7       // offset for set var   in R7
+
+                                // we know the index comes right like we want, last first
+                                get_var_for_bounds_body
+                                    adq     2, BP       // remove index or (dimension)
+                                    ldw     R4,(R2)     // load lower bound in R4
+                                    ldw     R5,(R2)2    // load upper bound in R5
+                                    ldw     R6,(BP)2    // load index       in R6
+                                    // verification of the bounds
+                                    cmp     R6,R4       // compare R6 - R4 or index-lower with 0
+                                    // we ensure lower<=index
+                                    jlw     #incorrect_index_lower - $ - 2  // could be reduced to blw
+                                    cmp     R6,R5       // compare R6 - R5 or index-upper with 0
+                                    // we ensure index<upper
+                                    jge     #incorrect_index_upper - $ - 2 // could be reduced to bge
+                                    // we have ensured 0<=lower<=index<upper
+
+                                    sub     R6,R4,R6    // get the difference between the index and the lower
+                                    mul     R6,R1,R6    // multiply the difference with the last size
+                                    add     R7,R6,R7    // add that to the offset
+
+                                    sub     R5,R4,R4    // put the difference between the bounds in R4
+                                    mul     R1,R4,R1    // multiply last size
+
+                                    adq     -4, R2      // offset the bounds pointer to lower
+                                    adq     -1,R3       // decrease dimension
+
+                                get_var_for_bounds_cond
+                                    tst     R3          // test dimensions>0
+                                    bgt     get_var_for_bounds_body  - $ -2  // if there is still dimensions
+
+
+                                add     R8,R7,R2         // add variable offset to array full offset
+                                ldw     R0,(R2)          // store the integer variable in RET
+                                ldw     R1,(R2)2         // store the floating variable in RETF (technically not needed for integer only)
+
+
+                                // restore the registers
+                                ldw     R13,(SP)+
+                                ldw     R8, (SP)+
+                                ldw     R7, (SP)+
+                                ldw     R6, (SP)+
+                                ldw     R5, (SP)+
+                                ldw     R4, (SP)+
+                                ldw     R3, (SP)+
+                                ldw     R2, (SP)+
+                                // restore link
+                                ldw     BP, (SP)+
+                                // return
+                                rts
+
+
+heap_information
+                                stw     BP, -(SP)
+                                ldw     BP, SP  // arguments counter
+                                adq     2, BP   // remove rts (burn out call for optimization)
+
+                                // stash those registers
+                                stw     R0, -(SP)
+                                stw     R1, -(SP)
+                                stw     R2, -(SP)
+                                stw     R3, -(SP)
+                                stw     R4, -(SP)
+                                stw     R5, -(SP)
+                                stw     R6, -(SP)
+
+                                // display size of heap
+                                    ldw     R0, #rodata_heap_information_1_
+                                    ldw     R1, @heap+2 // size of heap
+                                    jsr     @heap_printer_helper
+                                    jsr     @print_newline
+                                // display numbers of arrays
+                                    ldw     R0, #rodata_heap_information_2_
+                                    ldw     R1, @heap   //number of arrays
+                                    jsr     @heap_printer_helper
+                                    jsr     @print_newline
+                                ldq     0,R2        // counter         in R2
+                                ldw     R3,#heap    // offset          in R3
+                                adq     4,R3        // move offset to first array
+                                ldw     R4,@heap    // number of arrays in R4
+
+                                heap_information_loop
+                                    // array number
+                                        ldw     R0, #rodata_heap_information_3_
+                                        ldw     R1, R2
+                                        jsr     @heap_printer_helper
+                                    // type array
+                                        ldw     R0, #rodata_heap_information_4_
+                                        ldw     R1, (R3)
+                                        adq     -2, R1
+                                        tst     R1
+                                        beq     6  // if INTEGER jmp to 6 else to 5
+                                        ldw     R1, #rodata_heap_information_5_
+                                        bmp     4  // if REAL jmp to print
+                                        ldw     R1, #rodata_heap_information_6_
+                                        stw     R0, -(SP)
+                                        jsr     @print_string
+                                        adq     2, SP
+                                        stw     R1, -(SP)
+                                        jsr     @print_string
+                                        adq     2, SP
+                                    //  declaration
+                                        ldw     R0, #rodata_heap_information_7_
+                                        ldw     R5, #array_section
+                                        ldw     R6,(R3)4
+                                        add     R6,R5,R5         // offset of array in R5
+                                        ldw     R1, R5
+                                        jsr     @heap_printer_helper
+                                    // size
+                                        ldw     R0, #rodata_heap_information_8_
+                                        ldw     R1, (R3)6
+                                        jsr     @heap_printer_helper
+                                        ldw     R0, #rodata_minus_
+                                        ldw     R6,(R3)2    // dimensions in R6
+                                        add     R6,R6,R1    // double dimension for size 2 w
+                                        add     R1,R1,R1    // double dimension for 2 bounds
+                                        jsr     @heap_printer_helper
+                                    // dimension
+                                        ldw     R0, #rodata_heap_information_9_
+                                        ldw     R1, R6
+                                        jsr     @heap_printer_helper
+                                    // bounds
+                                        ldw     R0, #rodata_heap_information_10_
+                                        stw     R0,-(SP)
+                                        jsr     @print_string
+                                        adq     2,SP
+
+                                        heap_information_bounds_loop
+                                            // first bound
+                                                ldw     R0, #rodata_heap_information_11_
+                                                ldw     R1, (R5)
+                                                jsr     @heap_printer_helper
+                                            // second bound
+                                                ldw     R0, #rodata_heap_information_12_
+                                                ldw     R1, (R5)2
+                                                jsr     @heap_printer_helper
+                                            ldw     R0, #rodata_heap_information_13_    // text only
+                                            stw     R0, -(SP)
+                                            jsr     @print_string
+                                            adq     2, SP
+                                            adq 4,R5    // add 4 to array offset
+                                            adq -1,R6   // decrease dimensions
+                                        heap_information_bounds_cond
+                                            tst     R6          // if dimensions are still strictly positive jump out
+                                            beq     heap_info_exit_bound - $ - 2 // 14
+                                            ldw     R0, #rodata_heap_information_12_    // text only
+                                            stw     R0, -(SP)
+                                            jsr     @print_string
+                                            adq     2, SP
+                                            bmp     heap_information_bounds_loop  - $ -2
+                                        heap_info_exit_bound
+
+                                    adq     8,R3    // size of a static array declaration
+                                    adq     1,R2    // increase counter
+                                    jsr @print_newline
+
+                                heap_information_cond
+                                cmp     R4,R2       // compare R4-R2 or number of arrays-counter to 0
+                                jgt     #heap_information_loop  - $ -2  // funny fact dont use bcc if you are too far
+
+                                // restore the registers
+                                ldw     R6, (SP)+
+                                ldw     R5, (SP)+
+                                ldw     R4, (SP)+
+                                ldw     R3, (SP)+
+                                ldw     R2, (SP)+
+                                ldw     R1, (SP)+
+                                ldw     R0, (SP)+
+                                // restore link
+                                ldw     BP, (SP)+
+                                // return
+                                rts
+
+heap_printer_helper // we assume R0 contains the string to display first and R1 the number to display second
+                                stw     R0, -(SP)
+                                jsr     @print_string
+                                adq     2, SP
+                                stw     R1, -(SP)
+                                jsr     @print_short
+                                adq     2, SP
+                                rts
+//###DEBUG####
+stw     R2, -(SP)
+jsr     @print_short
+adq     2,SP
+stw     R0, -(SP)
+jsr     @print_short
+adq     2,SP
+jsr     @print_newline
+//###DEBUG####
+
+
+
+rodata_isr_generic_
+STRING                  "/!\ ISR"
+
+rodata_exit_
+STRING                  "/!\ EXIT"
+
+rodata_line_feed_
+BYTE                    10
+BYTE                    0
+
+rodata_point_
+STRING                  "."
+rodata_minus_
+STRING                  "-"
+
+rodata_bounds_order_
+STRING                  "/!\ The bounds are not in the right order for pair: "
+
+rodata_bounds_negative_
+STRING                  "/!\ The first bound is negative for pair: "
+
+rodata_array_too_large_
+STRING                  "/!\ The array is too large for pair: "
+
+rodata_array_set_var_too_many_dimensions_
+STRING                  "/!\ You tried to access a dimension not defined: "
+
+rodata_array_lower_bound_
+STRING                  "/!\ You tried to access outside of the lower bound for pair: "
+
+rodata_array_upper_bound_
+STRING                  "/!\ You tried to access outside of the upper bound for pair: "
+
+rodata_heap_information_1_
+STRING                  "Size taken by the heap: "
+rodata_heap_information_2_
+STRING                  "Number of arrays stored in the heap: "
+rodata_heap_information_3_
+STRING                  "Array number : "
+rodata_heap_information_4_
+STRING                  ", of type : "
+rodata_heap_information_5_
+STRING                  "REAL"
+rodata_heap_information_6_
+STRING                  "INTEGER/BOOLEAN"
+rodata_heap_information_7_
+STRING                  ", declared at: "
+rodata_heap_information_8_
+STRING                  ", with size of: "
+rodata_heap_information_9_
+STRING                  ", with number of dimensions: "
+rodata_heap_information_10_
+STRING                  " and with bounds: "
+rodata_heap_information_11_
+STRING                  "["
+rodata_heap_information_12_
+STRING                  ","
+rodata_heap_information_13_
+STRING                  "]"
+
+
+RSB                     APP_ADDR - $
+
+fcn_realpowint
+      stw BP, -(SP)
+      stw R0, -(SP)
+      ldw BP, SP
+      adq -4, SP
+       //Saving registers
+            stw R2, -(SP)
+            stw R3, -(SP)
+            stw R4, -(SP)
+            stw R5, -(SP)
+            stw R6, -(SP)
+            stw R7, -(SP)
+            stw R8, -(SP)
+            stw R9, -(SP)
+            stw R10, -(SP)
+            stw R11, -(SP)
+            stw R12, -(SP)
+            stw R13, -(SP)
+
+      // BLOCK
+        ldw R0, BP
+        stw BP, -(SP)
+        stw R0, -(SP)
+        ldw BP, SP
+        adi SP, SP, #-6
+        // DECL
+          // i offset : -2
+        // DECL
+          // result offset : -4
+        // ASSIGN
+          // VAR
+            ldw R2, (BP)
+            adi R2, R2, #6
+            ldw R11, (R2)
+            ldw R10, (R2)2
+          ldw R2, BP
+          adi R2, R2, #-4
+          stw R11, (R2)-2
+          stw R10, (R2)
+        // FOR
+          adq -2, SP
+          jmp #foriter0_61f8bee4 - $ - 2
+          for_61f8bee4
+          // BLOCK
+            ldw R0, BP
+            stw BP, -(SP)
+            stw R0, -(SP)
+            ldw BP, SP
+            // ASSIGN
+              // MUL
+                // VAR
+                  ldw R2, (BP)
+                  adi R2, R2, #-4
+                  ldw R11, (R2)-2
+                  ldw R10, (R2)
+                stw R10, -(SP)
+                stw R11, -(SP)
+                // VAR
+                  ldw R2, (BP)
+                  ldw R2, (R2)
+                  adi R2, R2, #6
+                  ldw R11, (R2)
+                  ldw R10, (R2)2
+                stw R10, -(SP)
+                stw R11, -(SP)
+                jsr @mul_fix
+                ldw R11, (SP)+
+                ldw R10, (SP)+
+                adq 4, SP
+              ldw R2, (BP)
+              adi R2, R2, #-4
+              stw R11, (R2)-2
+              stw R10, (R2)
+            // DUMMY
+            ldw SP, BP
+            adq 2, SP
+            ldw BP, (SP)+
+          ldw R2, (SP)
+          stw R2, -(SP)
+          rts
+          foriter0_61f8bee4
+          // NUMBER
+            ldq 1, R10
+          // ACTION STACK_ONLY, SET VAR i
+          ldw R2, BP
+          adi R2, R2, #-2
+          stw R10, (R2)
+          ldw R2, #foriter0_next_61f8bee4
+          stw R2, (SP)
+          foriter0_cond_61f8bee4
+          // ACTION STACK_ONLY, GET VAR i
+          ldw R2, BP
+          adi R2, R2, #-2
+          ldw R10, (R2)
+          ldq 0, R11
+          stw R10, -(SP)
+          stw R11, -(SP)
+          // SUB
+            // VAR
+              // ACTION STACK_ONLY, GET VAR n
+              ldw R2, (BP)
+              adi R2, R2, #10
+              ldw R12, (R2)
+            // NUMBER
+              ldq 1, R13
+            sub R12, R13, R13
+          ldq 0, R12
+          stw R13, -(SP)
+          stw R12, -(SP)
+          stw R10, -(SP)
+          stw R11, -(SP)
+          jsr @neg_fix
+          jsr @add_fix
+          ldw R11, (SP)+
+          ldw R10, (SP)+
+          adq 4, SP
+          // NUMBER
+            ldq 1, R12
+          ldq 0, R13
+          stw R12, -(SP)
+          stw R13, -(SP)
+          tst R12
+          bge 12
+          stw R10, -(SP)
+          stw R11, -(SP)
+          jsr @neg_fix
+          ldw R11, (SP)+
+          ldw R10, (SP)+
+          ldw R11, (SP)8
+          stw R11, -(SP)
+          tst R10
+          jge #for_61f8bee4 - $ - 2
+          jmp #foriter1_61f8bee4 - $ - 2
+          foriter0_next_61f8bee4
+          adq 2, SP
+          ldw R13, (SP)+
+          ldw R12, (SP)+
+          ldw R11, (SP)+
+          ldw R10, (SP)+
+          stw R10, -(SP)
+          stw R11, -(SP)
+          stw R12, -(SP)
+          stw R13, -(SP)
+          jsr @add_fix
+          ldw R11, (SP)+
+          ldw R10, (SP)+
+          adq 4, SP
+          tst R11
+          bge 2
+          adq 1, R10
+          ldq 0, R11
+          // ACTION STACK_ONLY, SET VAR i
+          ldw R2, BP
+          adi R2, R2, #-2
+          stw R10, (R2)
+          jmp #foriter0_cond_61f8bee4 - $ - 2
+          foriter1_61f8bee4
+          adq 2, SP
+        // ASSIGN
+          // VAR
+            ldw R2, BP
+            adi R2, R2, #-4
+            ldw R11, (R2)-2
+            ldw R10, (R2)
+          ldw R2, (BP)
+          stw R10, (R2)-4
+          stw R11, (R2)-2
+        // DUMMY
+        ldw SP, BP
+        adq 2, SP
+        ldw BP, (SP)+
+      ldw R0, (BP)-4
+      ldw R1, (BP)-2
+
+        //Restoring registers
+        ldw R13, (SP)+
+        ldw R12, (SP)+
+        ldw R11, (SP)+
+        ldw R10, (SP)+
+        ldw R9, (SP)+
+        ldw R8, (SP)+
+        ldw R7, (SP)+
+        ldw R6, (SP)+
+        ldw R5, (SP)+
+        ldw R4, (SP)+
+        ldw R3, (SP)+
+        ldw R2, (SP)+
+
+      ldw SP, BP
+      adq 2, SP
+      ldw BP, (SP)+
+      rts
+
+
+
+fcn_intpowint
+stw BP, -(SP)
+      stw R0, -(SP)
+      ldw BP, SP
+      adq -2, SP
+
+      //Saving registers
+      stw R2, -(SP)
+      stw R3, -(SP)
+      stw R4, -(SP)
+      stw R5, -(SP)
+      stw R6, -(SP)
+      stw R7, -(SP)
+      stw R8, -(SP)
+      stw R9, -(SP)
+      stw R10, -(SP)
+      stw R11, -(SP)
+      stw R12, -(SP)
+      stw R13, -(SP)
+
+      // BLOCK
+        ldw R0, BP
+        stw BP, -(SP)
+        stw R0, -(SP)
+        ldw BP, SP
+        adi SP, SP, #-4
+        // DECL
+          // i offset : -2
+        // DECL
+          // result offset : -4
+        // ASSIGN
+          // VAR
+            // ACTION STACK_ONLY, GET VAR x
+            ldw R2, (BP)
+            adi R2, R2, #6
+            ldw R10, (R2)
+          // ACTION STACK_ONLY, SET VAR result
+          ldw R2, BP
+          adi R2, R2, #-4
+          stw R10, (R2)
+        // FOR
+          adq -2, SP
+          jmp #foriter0_6e6c3152 - $ - 2
+          for_6e6c3152
+          // BLOCK
+            ldw R0, BP
+            stw BP, -(SP)
+            stw R0, -(SP)
+            ldw BP, SP
+            // ASSIGN
+              // MUL
+                // VAR
+                  // ACTION STACK_ONLY, GET VAR result
+                  ldw R2, (BP)
+                  adi R2, R2, #-4
+                  ldw R10, (R2)
+                // VAR
+                  // ACTION STACK_ONLY, GET VAR x
+                  ldw R2, (BP)
+                  ldw R2, (R2)
+                  adi R2, R2, #6
+                  ldw R11, (R2)
+                mul R10, R11, R11
+              // ACTION STACK_ONLY, SET VAR result
+              ldw R2, (BP)
+              adi R2, R2, #-4
+              stw R11, (R2)
+            // DUMMY
+            ldw SP, BP
+            adq 2, SP
+            ldw BP, (SP)+
+          ldw R2, (SP)
+          stw R2, -(SP)
+          rts
+          foriter0_6e6c3152
+          // NUMBER
+            ldq 1, R10
+          // ACTION STACK_ONLY, SET VAR i
+          ldw R2, BP
+          adi R2, R2, #-2
+          stw R10, (R2)
+          ldw R2, #foriter0_next_6e6c3152
+          stw R2, (SP)
+          foriter0_cond_6e6c3152
+          // ACTION STACK_ONLY, GET VAR i
+          ldw R2, BP
+          adi R2, R2, #-2
+          ldw R10, (R2)
+          ldq 0, R11
+          stw R10, -(SP)
+          stw R11, -(SP)
+          // SUB
+            // VAR
+              // ACTION STACK_ONLY, GET VAR n
+              ldw R2, (BP)
+              adi R2, R2, #8
+              ldw R12, (R2)
+            // NUMBER
+              ldq 1, R13
+            sub R12, R13, R13
+          ldq 0, R12
+          stw R13, -(SP)
+          stw R12, -(SP)
+          stw R10, -(SP)
+          stw R11, -(SP)
+          jsr @neg_fix
+          jsr @add_fix
+          ldw R11, (SP)+
+          ldw R10, (SP)+
+          adq 4, SP
+          // NUMBER
+            ldq 1, R12
+          ldq 0, R13
+          stw R12, -(SP)
+          stw R13, -(SP)
+          tst R12
+          bge 12
+          stw R10, -(SP)
+          stw R11, -(SP)
+          jsr @neg_fix
+          ldw R11, (SP)+
+          ldw R10, (SP)+
+          ldw R11, (SP)8
+          stw R11, -(SP)
+          tst R10
+          jge #for_6e6c3152 - $ - 2
+          jmp #foriter1_6e6c3152 - $ - 2
+          foriter0_next_6e6c3152
+          adq 2, SP
+          ldw R13, (SP)+
+          ldw R12, (SP)+
+          ldw R11, (SP)+
+          ldw R10, (SP)+
+          stw R10, -(SP)
+          stw R11, -(SP)
+          stw R12, -(SP)
+          stw R13, -(SP)
+          jsr @add_fix
+          ldw R11, (SP)+
+          ldw R10, (SP)+
+          adq 4, SP
+          tst R11
+          bge 2
+          adq 1, R10
+          ldq 0, R11
+          // ACTION STACK_ONLY, SET VAR i
+          ldw R2, BP
+          adi R2, R2, #-2
+          stw R10, (R2)
+          jmp #foriter0_cond_6e6c3152 - $ - 2
+          foriter1_6e6c3152
+          adq 2, SP
+        // ASSIGN
+          // VAR
+            // ACTION STACK_ONLY, GET VAR result
+            ldw R2, BP
+            adi R2, R2, #-4
+            ldw R10, (R2)
+          ldw R2, (BP)
+          stw R10, (R2)-2
+        // DUMMY
+        ldw SP, BP
+        adq 2, SP
+        ldw BP, (SP)+
+      ldw R0, (BP)-2
+
+      //Restoring registers
+          ldw R13, (SP)+
+          ldw R12, (SP)+
+          ldw R11, (SP)+
+          ldw R10, (SP)+
+          ldw R9, (SP)+
+          ldw R8, (SP)+
+          ldw R7, (SP)+
+          ldw R6, (SP)+
+          ldw R5, (SP)+
+          ldw R4, (SP)+
+          ldw R3, (SP)+
+          ldw R2, (SP)+
+
+      ldw SP, BP
+      adq 2, SP
+      ldw BP, (SP)+
+      rts
+
+fcn_realpowreal
+      stw BP, -(SP)
+      stw R0, -(SP)
+      ldw BP, SP
+      adq -4, SP
+      //Saving registers
+              stw R2, -(SP)
+              stw R3, -(SP)
+              stw R4, -(SP)
+              stw R5, -(SP)
+              stw R6, -(SP)
+              stw R7, -(SP)
+              stw R8, -(SP)
+              stw R9, -(SP)
+              stw R10, -(SP)
+              stw R11, -(SP)
+              stw R12, -(SP)
+              stw R13, -(SP)
+
+      // BLOCK
+        ldw R0, BP
+        stw BP, -(SP)
+        stw R0, -(SP)
+        ldw BP, SP
+        // DECL_FCN
+        // function name: exp
+          jmp #fcnexit_1795799895 - $ - 2
+          fcn_1795799895
+          stw BP, -(SP)
+          stw R0, -(SP)
+          ldw BP, SP
+          adq -4, SP
+          // BLOCK
+            ldw R0, BP
+            stw BP, -(SP)
+            stw R0, -(SP)
+            ldw BP, SP
+            adi SP, SP, #-12
+            // DECL
+              // max offset : -2
+            // DECL
+              // i offset : -4
+            // DECL
+              // xi offset : -6
+            // DECL
+              // result offset : -10
+            // ASSIGN
+              // NUMBER
+                ldq 15, R10
+              // ACTION STACK_ONLY, SET VAR max
+              ldw R2, BP
+              adi R2, R2, #-2
+              stw R10, (R2)
+            // ASSIGN
+              // NUMBER
+                ldq 0, R10
+              ldq 0, R11
+              ldw R2, BP
+              adi R2, R2, #-10
+              stw R11, (R2)-2
+              stw R10, (R2)
+            // ASSIGN
+              // NUMBER
+                ldq 1, R10
+              ldq 0, R11
+              ldw R2, BP
+              adi R2, R2, #-6
+              stw R11, (R2)-2
+              stw R10, (R2)
+            // FOR
+              adq -2, SP
+              jmp #foriter0_rpr - $ - 2
+              for_rpr
+              // BLOCK
+                ldw R0, BP
+                stw BP, -(SP)
+                stw R0, -(SP)
+                ldw BP, SP
+                // IF
+                  // EQ
+                    // VAR
+                      // ACTION STACK_ONLY, GET VAR i
+                      ldw R2, (BP)
+                      adi R2, R2, #-4
+                      ldw R10, (R2)
+                    // NUMBER
+                      ldq 0, R11
+                    cmp R10, R11
+                    beq 4
+                    ldq 0, R10
+                    bmp 2
+                    ldq 1, R10
+                  tst R10
+                  jeq #else_30b8a058 - $ - 2
+                  // ASSIGN
+                    // NUMBER
+                      ldq 1, R10
+                    ldq 0, R11
+                    ldw R2, (BP)
+                    adi R2, R2, #-6
+                    stw R11, (R2)-2
+                    stw R10, (R2)
+                  jmp #ifend_30b8a058 - $ - 2
+                  else_30b8a058
+                  // ASSIGN
+                    // DIV
+                      // MUL
+                        // VAR
+                          ldw R2, (BP)
+                          adi R2, R2, #-6
+                          ldw R11, (R2)-2
+                          ldw R10, (R2)
+                        stw R10, -(SP)
+                        stw R11, -(SP)
+                        // VAR
+                          ldw R2, (BP)
+                          ldw R2, (R2)
+                          adi R2, R2, #6
+                          ldw R11, (R2)
+                          ldw R10, (R2)2
+                        stw R10, -(SP)
+                        stw R11, -(SP)
+                        jsr @mul_fix
+                        ldw R11, (SP)+
+                        ldw R10, (SP)+
+                        adq 4, SP
+                      stw R10, -(SP)
+                      stw R11, -(SP)
+                      // VAR
+                        // ACTION STACK_ONLY, GET VAR i
+                        ldw R2, (BP)
+                        adi R2, R2, #-4
+                        ldw R10, (R2)
+                      ldq 0, R11
+                      stw R10, -(SP)
+                      stw R11, -(SP)
+                      jsr @div_fix
+                      ldw R11, (SP)+
+                      ldw R10, (SP)+
+                      adq 4, SP
+                    ldw R2, (BP)
+                    adi R2, R2, #-6
+                    stw R11, (R2)-2
+                    stw R10, (R2)
+                  ifend_30b8a058
+                // ASSIGN
+                  // ADD
+                    // VAR
+                      ldw R2, (BP)
+                      adi R2, R2, #-10
+                      ldw R11, (R2)-2
+                      ldw R10, (R2)
+                    stw R10, -(SP)
+                    stw R11, -(SP)
+                    // VAR
+                      ldw R2, (BP)
+                      adi R2, R2, #-6
+                      ldw R11, (R2)-2
+                      ldw R10, (R2)
+                    stw R10, -(SP)
+                    stw R11, -(SP)
+                    jsr @add_fix
+                    ldw R11, (SP)+
+                    ldw R10, (SP)+
+                    adq 4, SP
+                  ldw R2, (BP)
+                  adi R2, R2, #-10
+                  stw R11, (R2)-2
+                  stw R10, (R2)
+                ldw SP, BP
+                adq 2, SP
+                ldw BP, (SP)+
+              ldw R2, (SP)
+              stw R2, -(SP)
+              rts
+              foriter0_rpr
+              // NUMBER
+                ldq 0, R10
+              // ACTION STACK_ONLY, SET VAR i
+              ldw R2, BP
+              adi R2, R2, #-4
+              stw R10, (R2)
+              ldw R2, #foriter0_next_rpr
+              stw R2, (SP)
+              foriter0_cond_rpr
+              // ACTION STACK_ONLY, GET VAR i
+              ldw R2, BP
+              adi R2, R2, #-4
+              ldw R10, (R2)
+              ldq 0, R11
+              stw R10, -(SP)
+              stw R11, -(SP)
+              // VAR
+                // ACTION STACK_ONLY, GET VAR max
+                ldw R2, BP
+                adi R2, R2, #-2
+                ldw R12, (R2)
+              ldq 0, R13
+              stw R12, -(SP)
+              stw R13, -(SP)
+              stw R10, -(SP)
+              stw R11, -(SP)
+              jsr @neg_fix
+              jsr @add_fix
+              ldw R11, (SP)+
+              ldw R10, (SP)+
+              adq 4, SP
+              // NUMBER
+                ldq 1, R12
+              ldq 0, R13
+              stw R12, -(SP)
+              stw R13, -(SP)
+              tst R12
+              bge 12
+              stw R10, -(SP)
+              stw R11, -(SP)
+              jsr @neg_fix
+              ldw R11, (SP)+
+              ldw R10, (SP)+
+              ldw R11, (SP)8
+              stw R11, -(SP)
+              tst R10
+              jge #for_rpr - $ - 2
+              jmp #foriter1_rpr - $ - 2
+              foriter0_next_rpr
+              adq 2, SP
+              ldw R13, (SP)+
+              ldw R12, (SP)+
+              ldw R11, (SP)+
+              ldw R10, (SP)+
+              stw R10, -(SP)
+              stw R11, -(SP)
+              stw R12, -(SP)
+              stw R13, -(SP)
+              jsr @add_fix
+              ldw R11, (SP)+
+              ldw R10, (SP)+
+              adq 4, SP
+              tst R11
+              bge 2
+              adq 1, R10
+              ldq 0, R11
+              // ACTION STACK_ONLY, SET VAR i
+              ldw R2, BP
+              adi R2, R2, #-4
+              stw R10, (R2)
+              jmp #foriter0_cond_rpr - $ - 2
+              foriter1_rpr
+              adq 2, SP
+            // ASSIGN
+              // VAR
+                ldw R2, BP
+                adi R2, R2, #-10
+                ldw R11, (R2)-2
+                ldw R10, (R2)
+              ldw R2, (BP)
+              stw R10, (R2)-4
+              stw R11, (R2)-2
+            // DUMMY
+            ldw SP, BP
+            adq 2, SP
+            ldw BP, (SP)+
+          ldw R0, (BP)-4
+          ldw R1, (BP)-2
+          ldw SP, BP
+          adq 2, SP
+          ldw BP, (SP)+
+          rts
+          fcnexit_1795799895
+        // DECL_FCN
+        // function name: log
+          jmp #fcnexit_665372494 - $ - 2
+          fcn_665372494
+          stw BP, -(SP)
+          stw R0, -(SP)
+          ldw BP, SP
+          adq -4, SP
+          // BLOCK
+            ldw R0, BP
+            stw BP, -(SP)
+            stw R0, -(SP)
+            ldw BP, SP
+            adi SP, SP, #-10
+            // DECL
+              // max offset : -2
+            // DECL
+              // i offset : -4
+            // DECL
+              // sign offset : -6
+            // DECL
+              // result offset : -8
+            // ASSIGN
+              // NUMBER
+                ldq 15, R10
+              // ACTION STACK_ONLY, SET VAR max
+              ldw R2, BP
+              adi R2, R2, #-2
+              stw R10, (R2)
+            // ASSIGN
+              // NUMBER
+                ldq 0, R10
+              ldq 0, R11
+              ldw R2, BP
+              adi R2, R2, #-8
+              stw R11, (R2)-2
+              stw R10, (R2)
+            // FOR
+              adq -2, SP
+              jmp #foriter0_2d8f65a4 - $ - 2
+              for_2d8f65a4
+              // BLOCK
+                ldw R0, BP
+                stw BP, -(SP)
+                stw R0, -(SP)
+                ldw BP, SP
+                // ASSIGN
+                  // ADD
+                    // VAR
+                      ldw R2, (BP)
+                      adi R2, R2, #-8
+                      ldw R11, (R2)-2
+                      ldw R10, (R2)
+                    stw R10, -(SP)
+                    stw R11, -(SP)
+                    // DIV
+                      // POW
+                        // ADD
+                          // MUL
+                            // NUMBER
+                              ldq 2, R10
+                            // VAR
+                              // ACTION STACK_ONLY, GET VAR i
+                              ldw R2, (BP)
+                              adi R2, R2, #-4
+                              ldw R11, (R2)
+                            mul R10, R11, R11
+                          // NUMBER
+                            ldq 1, R10
+                          add R11, R10, R10
+                        stw R10, -(SP)
+                        // DIV
+                          // SUB
+                            // VAR
+                              ldw R2, (BP)
+                              ldw R2, (R2)
+                              adi R2, R2, #6
+                              ldw R12, (R2)
+                              ldw R11, (R2)2
+                            stw R11, -(SP)
+                            stw R12, -(SP)
+                            // NUMBER
+                              ldq 1, R11
+                            ldq 0, R12
+                            stw R11, -(SP)
+                            stw R12, -(SP)
+                            jsr @neg_fix
+                            jsr @add_fix
+                            ldw R12, (SP)+
+                            ldw R11, (SP)+
+                            adq 4, SP
+                          stw R11, -(SP)
+                          stw R12, -(SP)
+                          // ADD
+                            // VAR
+                              ldw R2, (BP)
+                              ldw R2, (R2)
+                              adi R2, R2, #6
+                              ldw R12, (R2)
+                              ldw R11, (R2)2
+                            stw R11, -(SP)
+                            stw R12, -(SP)
+                            // NUMBER
+                              ldq 1, R11
+                            ldq 0, R12
+                            stw R11, -(SP)
+                            stw R12, -(SP)
+                            jsr @add_fix
+                            ldw R12, (SP)+
+                            ldw R11, (SP)+
+                            adq 4, SP
+                          stw R11, -(SP)
+                          stw R12, -(SP)
+                          jsr @div_fix
+                          ldw R12, (SP)+
+                          ldw R11, (SP)+
+                          adq 4, SP
+                        stw R11, -(SP)
+                        stw R12, -(SP)
+                        jsr @fcn_realpowint
+                        ldw R11, R0
+                        ldw R12, R1
+                        adq 6, SP
+                      stw R11, -(SP)
+                      stw R12, -(SP)
+                      // ADD
+                        // MUL
+                          // NUMBER
+                            ldq 2, R11
+                          // VAR
+                            // ACTION STACK_ONLY, GET VAR i
+                            ldw R2, (BP)
+                            adi R2, R2, #-4
+                            ldw R12, (R2)
+                          mul R11, R12, R12
+                        // NUMBER
+                          ldq 1, R11
+                        add R12, R11, R11
+                      ldq 0, R12
+                      stw R11, -(SP)
+                      stw R12, -(SP)
+                      jsr @div_fix
+                      ldw R12, (SP)+
+                      ldw R11, (SP)+
+                      adq 4, SP
+                    stw R11, -(SP)
+                    stw R12, -(SP)
+                    jsr @add_fix
+                    ldw R12, (SP)+
+                    ldw R11, (SP)+
+                    adq 4, SP
+                  ldw R2, (BP)
+                  adi R2, R2, #-8
+                  stw R12, (R2)-2
+                  stw R11, (R2)
+                // DUMMY
+                ldw SP, BP
+                adq 2, SP
+                ldw BP, (SP)+
+              ldw R2, (SP)
+              stw R2, -(SP)
+              rts
+              foriter0_2d8f65a4
+              // NUMBER
+                ldq 0, R11
+              // ACTION STACK_ONLY, SET VAR i
+              ldw R2, BP
+              adi R2, R2, #-4
+              stw R11, (R2)
+              ldw R2, #foriter0_next_2d8f65a4
+              stw R2, (SP)
+              foriter0_cond_2d8f65a4
+              // ACTION STACK_ONLY, GET VAR i
+              ldw R2, BP
+              adi R2, R2, #-4
+              ldw R11, (R2)
+              ldq 0, R12
+              stw R11, -(SP)
+              stw R12, -(SP)
+              // VAR
+                // ACTION STACK_ONLY, GET VAR max
+                ldw R2, BP
+                adi R2, R2, #-2
+                ldw R13, (R2)
+              ldq 0, R3
+              stw R13, -(SP)
+              stw R3, -(SP)
+              stw R11, -(SP)
+              stw R12, -(SP)
+              jsr @neg_fix
+              jsr @add_fix
+              ldw R12, (SP)+
+              ldw R11, (SP)+
+              adq 4, SP
+              // NUMBER
+                ldq 1, R13
+              ldq 0, R3
+              stw R13, -(SP)
+              stw R3, -(SP)
+              tst R13
+              bge 12
+              stw R11, -(SP)
+              stw R12, -(SP)
+              jsr @neg_fix
+              ldw R12, (SP)+
+              ldw R11, (SP)+
+              ldw R12, (SP)8
+              stw R12, -(SP)
+              tst R11
+              jge #for_2d8f65a4 - $ - 2
+              jmp #foriter1_2d8f65a4 - $ - 2
+              foriter0_next_2d8f65a4
+              adq 2, SP
+              ldw R3, (SP)+
+              ldw R13, (SP)+
+              ldw R12, (SP)+
+              ldw R11, (SP)+
+              stw R11, -(SP)
+              stw R12, -(SP)
+              stw R13, -(SP)
+              stw R3, -(SP)
+              jsr @add_fix
+              ldw R12, (SP)+
+              ldw R11, (SP)+
+              adq 4, SP
+              tst R12
+              bge 2
+              adq 1, R11
+              ldq 0, R12
+              // ACTION STACK_ONLY, SET VAR i
+              ldw R2, BP
+              adi R2, R2, #-4
+              stw R11, (R2)
+              jmp #foriter0_cond_2d8f65a4 - $ - 2
+              foriter1_2d8f65a4
+              adq 2, SP
+            // ASSIGN
+              // MUL
+                // NUMBER
+                  ldq 2, R11
+                stw R11, -(SP)
+                ldq 0, R2
+                stw R2, -(SP)
+                // VAR
+                  ldw R2, BP
+                  adi R2, R2, #-8
+                  ldw R12, (R2)-2
+                  ldw R11, (R2)
+                stw R11, -(SP)
+                stw R12, -(SP)
+                jsr @mul_fix
+                ldw R12, (SP)+
+                ldw R11, (SP)+
+                adq 4, SP
+              ldw R2, (BP)
+              stw R11, (R2)-4
+              stw R12, (R2)-2
+            // DUMMY
+            ldw SP, BP
+            adq 2, SP
+            ldw BP, (SP)+
+          ldw R0, (BP)-4
+          ldw R1, (BP)-2
+          ldw SP, BP
+          adq 2, SP
+          ldw BP, (SP)+
+          rts
+          fcnexit_665372494
+        // ASSIGN
+          // FCN
+            // MUL
+              // VAR
+                ldw R2, (BP)
+                adi R2, R2, #10
+                ldw R12, (R2)
+                ldw R11, (R2)2
+              stw R11, -(SP)
+              stw R12, -(SP)
+              // FCN
+                // VAR
+                  ldw R2, (BP)
+                  adi R2, R2, #6
+                  ldw R12, (R2)
+                  ldw R11, (R2)2
+                stw R11, -(SP)
+                stw R12, -(SP)
+                ldw R0, BP
+                jsr @fcn_665372494
+                adi SP, SP, #4
+                ldw R11, R0
+                ldw R12, R1
+              stw R11, -(SP)
+              stw R12, -(SP)
+              jsr @mul_fix
+              ldw R12, (SP)+
+              ldw R11, (SP)+
+              adq 4, SP
+            stw R11, -(SP)
+            stw R12, -(SP)
+            ldw R0, BP
+            jsr @fcn_1795799895
+            adi SP, SP, #4
+            ldw R11, R0
+            ldw R12, R1
+          ldw R2, (BP)
+          stw R11, (R2)-4
+          stw R12, (R2)-2
+        // DUMMY
+        ldw SP, BP
+        adq 2, SP
+        ldw BP, (SP)+
+      ldw R0, (BP)-4
+      ldw R1, (BP)-2
+        //Restoring registers
+            ldw R13, (SP)+
+            ldw R12, (SP)+
+            ldw R11, (SP)+
+            ldw R10, (SP)+
+            ldw R9, (SP)+
+            ldw R8, (SP)+
+            ldw R7, (SP)+
+            ldw R6, (SP)+
+            ldw R5, (SP)+
+            ldw R4, (SP)+
+            ldw R3, (SP)+
+            ldw R2, (SP)+
+      ldw SP, BP
+      adq 2, SP
+      ldw BP, (SP)+
+      rts
+
+fcn_exp
+ stw BP, -(SP)
+      stw R0, -(SP)
+      ldw BP, SP
+      adq -4, SP
+       //Saving registers
+              stw R2, -(SP)
+              stw R3, -(SP)
+              stw R4, -(SP)
+              stw R5, -(SP)
+              stw R6, -(SP)
+              stw R7, -(SP)
+              stw R8, -(SP)
+              stw R9, -(SP)
+              stw R10, -(SP)
+              stw R11, -(SP)
+              stw R12, -(SP)
+              stw R13, -(SP)
+      // BLOCK
+        ldw R0, BP
+        stw BP, -(SP)
+        stw R0, -(SP)
+        ldw BP, SP
+        adi SP, SP, #-12
+        // DECL
+          // max offset : -2
+        // DECL
+          // i offset : -4
+        // DECL
+          // xi offset : -6
+        // DECL
+          // result offset : -10
+        // ASSIGN
+          // NUMBER
+            ldq 15, R10
+          // ACTION STACK_ONLY, SET VAR max
+          ldw R2, BP
+          adi R2, R2, #-2
+          stw R10, (R2)
+        // ASSIGN
+          // NUMBER
+            ldq 0, R10
+          ldq 0, R11
+          ldw R2, BP
+          adi R2, R2, #-10
+          stw R11, (R2)-2
+          stw R10, (R2)
+        // ASSIGN
+          // NUMBER
+            ldq 1, R10
+          ldq 0, R11
+          ldw R2, BP
+          adi R2, R2, #-6
+          stw R11, (R2)-2
+          stw R10, (R2)
+        // FOR
+          adq -2, SP
+          jmp #foriter0_b1faa03f - $ - 2
+          for_b1faa03f
+          // BLOCK
+            ldw R0, BP
+            stw BP, -(SP)
+            stw R0, -(SP)
+            ldw BP, SP
+            // IF
+              // EQ
+                // VAR
+                  // ACTION STACK_ONLY, GET VAR i
+                  ldw R2, (BP)
+                  adi R2, R2, #-4
+                  ldw R10, (R2)
+                // NUMBER
+                  ldq 0, R11
+                cmp R10, R11
+                beq 4
+                ldq 0, R10
+                bmp 2
+                ldq 1, R10
+              tst R10
+              jeq #else_f530073 - $ - 2
+              // ASSIGN
+                // NUMBER
+                  ldq 1, R10
+                ldq 0, R11
+                ldw R2, (BP)
+                adi R2, R2, #-6
+                stw R11, (R2)-2
+                stw R10, (R2)
+              jmp #ifend_f530073 - $ - 2
+              else_f530073
+              // ASSIGN
+                // DIV
+                  // MUL
+                    // VAR
+                      ldw R2, (BP)
+                      adi R2, R2, #-6
+                      ldw R11, (R2)-2
+                      ldw R10, (R2)
+                    stw R10, -(SP)
+                    stw R11, -(SP)
+                    // VAR
+                      ldw R2, (BP)
+                      ldw R2, (R2)
+                      adi R2, R2, #6
+                      ldw R11, (R2)
+                      ldw R10, (R2)2
+                    stw R10, -(SP)
+                    stw R11, -(SP)
+                    jsr @mul_fix
+                    ldw R11, (SP)+
+                    ldw R10, (SP)+
+                    adq 4, SP
+                  stw R10, -(SP)
+                  stw R11, -(SP)
+                  // VAR
+                    // ACTION STACK_ONLY, GET VAR i
+                    ldw R2, (BP)
+                    adi R2, R2, #-4
+                    ldw R10, (R2)
+                  ldq 0, R11
+                  stw R10, -(SP)
+                  stw R11, -(SP)
+                  jsr @div_fix
+                  ldw R11, (SP)+
+                  ldw R10, (SP)+
+                  adq 4, SP
+                ldw R2, (BP)
+                adi R2, R2, #-6
+                stw R11, (R2)-2
+                stw R10, (R2)
+              ifend_f530073
+            // ASSIGN
+              // ADD
+                // VAR
+                  ldw R2, (BP)
+                  adi R2, R2, #-10
+                  ldw R11, (R2)-2
+                  ldw R10, (R2)
+                stw R10, -(SP)
+                stw R11, -(SP)
+                // VAR
+                  ldw R2, (BP)
+                  adi R2, R2, #-6
+                  ldw R11, (R2)-2
+                  ldw R10, (R2)
+                stw R10, -(SP)
+                stw R11, -(SP)
+                jsr @add_fix
+                ldw R11, (SP)+
+                ldw R10, (SP)+
+                adq 4, SP
+              ldw R2, (BP)
+              adi R2, R2, #-10
+              stw R11, (R2)-2
+              stw R10, (R2)
+            ldw SP, BP
+            adq 2, SP
+            ldw BP, (SP)+
+          ldw R2, (SP)
+          stw R2, -(SP)
+          rts
+          foriter0_b1faa03f
+          // NUMBER
+            ldq 0, R10
+          // ACTION STACK_ONLY, SET VAR i
+          ldw R2, BP
+          adi R2, R2, #-4
+          stw R10, (R2)
+          ldw R2, #foriter0_next_b1faa03f
+          stw R2, (SP)
+          foriter0_cond_b1faa03f
+          // ACTION STACK_ONLY, GET VAR i
+          ldw R2, BP
+          adi R2, R2, #-4
+          ldw R10, (R2)
+          ldq 0, R11
+          stw R10, -(SP)
+          stw R11, -(SP)
+          // VAR
+            // ACTION STACK_ONLY, GET VAR max
+            ldw R2, BP
+            adi R2, R2, #-2
+            ldw R12, (R2)
+          ldq 0, R13
+          stw R12, -(SP)
+          stw R13, -(SP)
+          stw R10, -(SP)
+          stw R11, -(SP)
+          jsr @neg_fix
+          jsr @add_fix
+          ldw R11, (SP)+
+          ldw R10, (SP)+
+          adq 4, SP
+          // NUMBER
+            ldq 1, R12
+          ldq 0, R13
+          stw R12, -(SP)
+          stw R13, -(SP)
+          tst R12
+          bge 12
+          stw R10, -(SP)
+          stw R11, -(SP)
+          jsr @neg_fix
+          ldw R11, (SP)+
+          ldw R10, (SP)+
+          ldw R11, (SP)8
+          stw R11, -(SP)
+          tst R10
+          jge #for_b1faa03f - $ - 2
+          jmp #foriter1_b1faa03f - $ - 2
+          foriter0_next_b1faa03f
+          adq 2, SP
+          ldw R13, (SP)+
+          ldw R12, (SP)+
+          ldw R11, (SP)+
+          ldw R10, (SP)+
+          stw R10, -(SP)
+          stw R11, -(SP)
+          stw R12, -(SP)
+          stw R13, -(SP)
+          jsr @add_fix
+          ldw R11, (SP)+
+          ldw R10, (SP)+
+          adq 4, SP
+          tst R11
+          bge 2
+          adq 1, R10
+          ldq 0, R11
+          // ACTION STACK_ONLY, SET VAR i
+          ldw R2, BP
+          adi R2, R2, #-4
+          stw R10, (R2)
+          jmp #foriter0_cond_b1faa03f - $ - 2
+          foriter1_b1faa03f
+          adq 2, SP
+        // ASSIGN
+          // VAR
+            ldw R2, BP
+            adi R2, R2, #-10
+            ldw R11, (R2)-2
+            ldw R10, (R2)
+          ldw R2, (BP)
+          stw R10, (R2)-4
+          stw R11, (R2)-2
+        // DUMMY
+        ldw SP, BP
+        adq 2, SP
+        ldw BP, (SP)+
+      ldw R0, (BP)-4
+      ldw R1, (BP)-2
+        //Restoring registers
+            ldw R13, (SP)+
+            ldw R12, (SP)+
+            ldw R11, (SP)+
+            ldw R10, (SP)+
+            ldw R9, (SP)+
+            ldw R8, (SP)+
+            ldw R7, (SP)+
+            ldw R6, (SP)+
+            ldw R5, (SP)+
+            ldw R4, (SP)+
+            ldw R3, (SP)+
+            ldw R2, (SP)+
+      ldw SP, BP
+      adq 2, SP
+      ldw BP, (SP)+
+      rts
+
+ fcn_log
+ stw BP, -(SP)
+      stw R0, -(SP)
+      ldw BP, SP
+      adq -4, SP
+      //Saving registers
+            stw R2, -(SP)
+            stw R3, -(SP)
+            stw R4, -(SP)
+            stw R5, -(SP)
+            stw R6, -(SP)
+            stw R7, -(SP)
+            stw R8, -(SP)
+            stw R9, -(SP)
+            stw R10, -(SP)
+            stw R11, -(SP)
+            stw R12, -(SP)
+            stw R13, -(SP)
+
+      // BLOCK
+        ldw R0, BP
+        stw BP, -(SP)
+        stw R0, -(SP)
+        ldw BP, SP
+        adi SP, SP, #-10
+        // DECL
+          // max offset : -2
+        // DECL
+          // i offset : -4
+        // DECL
+          // sign offset : -6
+        // DECL
+          // result offset : -8
+        // ASSIGN
+          // NUMBER
+            ldq 15, R10
+          // ACTION STACK_ONLY, SET VAR max
+          ldw R2, BP
+          adi R2, R2, #-2
+          stw R10, (R2)
+        // ASSIGN
+          // NUMBER
+            ldq 0, R10
+          ldq 0, R11
+          ldw R2, BP
+          adi R2, R2, #-8
+          stw R11, (R2)-2
+          stw R10, (R2)
+        // FOR
+          adq -2, SP
+          jmp #foriter0_a315771d - $ - 2
+          for_a315771d
+          // BLOCK
+            ldw R0, BP
+            stw BP, -(SP)
+            stw R0, -(SP)
+            ldw BP, SP
+            // ASSIGN
+              // ADD
+                // VAR
+                  ldw R2, (BP)
+                  adi R2, R2, #-8
+                  ldw R11, (R2)-2
+                  ldw R10, (R2)
+                stw R10, -(SP)
+                stw R11, -(SP)
+                // DIV
+                  // POW
+                    // ADD
+                      // MUL
+                        // NUMBER
+                          ldq 2, R10
+                        // VAR
+                          // ACTION STACK_ONLY, GET VAR i
+                          ldw R2, (BP)
+                          adi R2, R2, #-4
+                          ldw R11, (R2)
+                        mul R10, R11, R11
+                      // NUMBER
+                        ldq 1, R10
+                      add R11, R10, R10
+                    stw R10, -(SP)
+                    // DIV
+                      // SUB
+                        // VAR
+                          ldw R2, (BP)
+                          ldw R2, (R2)
+                          adi R2, R2, #6
+                          ldw R12, (R2)
+                          ldw R11, (R2)2
+                        stw R11, -(SP)
+                        stw R12, -(SP)
+                        // NUMBER
+                          ldq 1, R11
+                        ldq 0, R12
+                        stw R11, -(SP)
+                        stw R12, -(SP)
+                        jsr @neg_fix
+                        jsr @add_fix
+                        ldw R12, (SP)+
+                        ldw R11, (SP)+
+                        adq 4, SP
+                      stw R11, -(SP)
+                      stw R12, -(SP)
+                      // ADD
+                        // VAR
+                          ldw R2, (BP)
+                          ldw R2, (R2)
+                          adi R2, R2, #6
+                          ldw R12, (R2)
+                          ldw R11, (R2)2
+                        stw R11, -(SP)
+                        stw R12, -(SP)
+                        // NUMBER
+                          ldq 1, R11
+                        ldq 0, R12
+                        stw R11, -(SP)
+                        stw R12, -(SP)
+                        jsr @add_fix
+                        ldw R12, (SP)+
+                        ldw R11, (SP)+
+                        adq 4, SP
+                      stw R11, -(SP)
+                      stw R12, -(SP)
+                      jsr @div_fix
+                      ldw R12, (SP)+
+                      ldw R11, (SP)+
+                      adq 4, SP
+                    stw R11, -(SP)
+                    stw R12, -(SP)
+                    jsr @fcn_realpowint
+                    ldw R11, R0
+                    ldw R12, R1
+                    adq 6, SP
+                  stw R11, -(SP)
+                  stw R12, -(SP)
+                  // ADD
+                    // MUL
+                      // NUMBER
+                        ldq 2, R11
+                      // VAR
+                        // ACTION STACK_ONLY, GET VAR i
+                        ldw R2, (BP)
+                        adi R2, R2, #-4
+                        ldw R12, (R2)
+                      mul R11, R12, R12
+                    // NUMBER
+                      ldq 1, R11
+                    add R12, R11, R11
+                  ldq 0, R12
+                  stw R11, -(SP)
+                  stw R12, -(SP)
+                  jsr @div_fix
+                  ldw R12, (SP)+
+                  ldw R11, (SP)+
+                  adq 4, SP
+                stw R11, -(SP)
+                stw R12, -(SP)
+                jsr @add_fix
+                ldw R12, (SP)+
+                ldw R11, (SP)+
+                adq 4, SP
+              ldw R2, (BP)
+              adi R2, R2, #-8
+              stw R12, (R2)-2
+              stw R11, (R2)
+            // DUMMY
+            ldw SP, BP
+            adq 2, SP
+            ldw BP, (SP)+
+          ldw R2, (SP)
+          stw R2, -(SP)
+          rts
+          foriter0_a315771d
+          // NUMBER
+            ldq 0, R11
+          // ACTION STACK_ONLY, SET VAR i
+          ldw R2, BP
+          adi R2, R2, #-4
+          stw R11, (R2)
+          ldw R2, #foriter0_next_a315771d
+          stw R2, (SP)
+          foriter0_cond_a315771d
+          // ACTION STACK_ONLY, GET VAR i
+          ldw R2, BP
+          adi R2, R2, #-4
+          ldw R11, (R2)
+          ldq 0, R12
+          stw R11, -(SP)
+          stw R12, -(SP)
+          // VAR
+            // ACTION STACK_ONLY, GET VAR max
+            ldw R2, BP
+            adi R2, R2, #-2
+            ldw R13, (R2)
+          ldq 0, R3
+          stw R13, -(SP)
+          stw R3, -(SP)
+          stw R11, -(SP)
+          stw R12, -(SP)
+          jsr @neg_fix
+          jsr @add_fix
+          ldw R12, (SP)+
+          ldw R11, (SP)+
+          adq 4, SP
+          // NUMBER
+            ldq 1, R13
+          ldq 0, R3
+          stw R13, -(SP)
+          stw R3, -(SP)
+          tst R13
+          bge 12
+          stw R11, -(SP)
+          stw R12, -(SP)
+          jsr @neg_fix
+          ldw R12, (SP)+
+          ldw R11, (SP)+
+          ldw R12, (SP)8
+          stw R12, -(SP)
+          tst R11
+          jge #for_a315771d - $ - 2
+          jmp #foriter1_a315771d - $ - 2
+          foriter0_next_a315771d
+          adq 2, SP
+          ldw R3, (SP)+
+          ldw R13, (SP)+
+          ldw R12, (SP)+
+          ldw R11, (SP)+
+          stw R11, -(SP)
+          stw R12, -(SP)
+          stw R13, -(SP)
+          stw R3, -(SP)
+          jsr @add_fix
+          ldw R12, (SP)+
+          ldw R11, (SP)+
+          adq 4, SP
+          tst R12
+          bge 2
+          adq 1, R11
+          ldq 0, R12
+          // ACTION STACK_ONLY, SET VAR i
+          ldw R2, BP
+          adi R2, R2, #-4
+          stw R11, (R2)
+          jmp #foriter0_cond_a315771d - $ - 2
+          foriter1_a315771d
+          adq 2, SP
+        // ASSIGN
+          // MUL
+            // NUMBER
+              ldq 2, R11
+            stw R11, -(SP)
+            ldq 0, R2
+            stw R2, -(SP)
+            // VAR
+              ldw R2, BP
+              adi R2, R2, #-8
+              ldw R12, (R2)-2
+              ldw R11, (R2)
+            stw R11, -(SP)
+            stw R12, -(SP)
+            jsr @mul_fix
+            ldw R12, (SP)+
+            ldw R11, (SP)+
+            adq 4, SP
+          ldw R2, (BP)
+          stw R11, (R2)-4
+          stw R12, (R2)-2
+        // DUMMY
+        ldw SP, BP
+        adq 2, SP
+        ldw BP, (SP)+
+      ldw R0, (BP)-4
+      ldw R1, (BP)-2
+      //Restoring registers
+          ldw R13, (SP)+
+          ldw R12, (SP)+
+          ldw R11, (SP)+
+          ldw R10, (SP)+
+          ldw R9, (SP)+
+          ldw R8, (SP)+
+          ldw R7, (SP)+
+          ldw R6, (SP)+
+          ldw R5, (SP)+
+          ldw R4, (SP)+
+          ldw R3, (SP)+
+          ldw R2, (SP)+
+      ldw SP, BP
+      adq 2, SP
+      ldw BP, (SP)+
+      rts
+
+
+////////////////////////////////////////////////////////////////////////////////
+///////////////////////////// COMPILED PROGRAM CODE ////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////--APP_SRC--//////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////// PROGRAM HEAP /////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////--HEAP--///////////////////////////////////////
+array_section					// array are stored here with first n pairs of bounds
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+RSB                     RST_ADDR - $
+
+                                jea     @entry_

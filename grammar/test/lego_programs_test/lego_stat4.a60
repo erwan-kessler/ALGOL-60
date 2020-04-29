@@ -1,0 +1,53 @@
+begin
+	comment calculate histogram;
+	
+	real array aa[1:100000];
+	real mini, maxi;
+	integer array bins[1:100];
+	integer i, n, nbins;
+	
+	procedure vectRandom( v, ndim, seed);
+	real array v; integer ndim, seed;
+	begin
+		integer i;
+		integer m, a, b, s, r;
+		m := 32768; a := 805; b := 6925;
+		s := seed;
+		for i :=1 step 1 until ndim do
+		begin
+			s := s*a+b; r := entier(s/m); s := s - r*m; 
+			v[i] := (entier((s+1)/(m+1)*10000)) / 10000 
+		end
+	end;
+	
+	procedure statHistogram(a, dim, b, nb, mi, ma); 
+	real array a; integer dim; integer array b; integer nb; real mi, ma;
+	begin
+		integer i, k;
+		real d;
+		mi := a[1]; ma := a[1];
+		for i := 2 step 1 until dim do
+		begin
+			if (mi > a[i]) then mi := a[i];
+			if (ma < a[i]) then ma := a[i]
+		end ;
+		d := (ma - mi) / nb;
+		for i := 1 step 1 until nb do b[i] := 0;
+		for i := 1 step 1 until dim do 
+		begin
+			k := entier ( a[i] / d) +1;
+			b[k] := b[k] + 1
+		end
+	end ;
+	
+	n := 100000;
+	nbins := 20;
+	
+	vectRandom(aa, n, n);
+	statHistogram(aa, n, bins, nbins,  mini, maxi);
+	outstring (1, "mi ma: "); outreal (1, mini); outreal (1, maxi); outstring (1,"\n");
+	outstring (1, "histogram: ");
+	for i := 1 step 1 until nbins do  outinteger (1, bins[i] );
+	outstring (1,"\n")
+	
+end

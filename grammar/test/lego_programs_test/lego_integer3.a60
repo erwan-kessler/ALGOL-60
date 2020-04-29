@@ -1,0 +1,9 @@
+begin
+comment investigate multiplication overflow (max int = 2147483647);
+
+	integer n, m, r;
+	ininteger(0,n); ininteger(0,m);
+	r := n*m;
+	outinteger(1,r)
+	
+end

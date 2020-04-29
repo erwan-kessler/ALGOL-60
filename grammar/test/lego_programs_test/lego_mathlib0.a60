@@ -1,0 +1,9 @@
+begin
+	comment sign function;
+	real x;
+	
+	inreal(0, x);
+	outreal(1, sign(x));
+	outstring(1,"\n")
+	
+end

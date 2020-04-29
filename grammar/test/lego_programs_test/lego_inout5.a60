@@ -1,0 +1,16 @@
+begin
+comment: FILE_5 with real numbers reading;
+	integer n;
+	integer i, j ;
+	real array a[1:100,1:100];
+	n := 10;
+	for i := 1 step 1 until n do
+	begin
+		for j := 1 step 1 until n do
+		begin
+			inreal (5, a[i,j]);
+			outreal (1,a[i,j])
+		end;
+		outstring (1,"\n")
+	end
+end

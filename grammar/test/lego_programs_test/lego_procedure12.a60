@@ -1,0 +1,19 @@
+begin
+comment qualifier own in procedure;
+	integer nn;
+	
+	integer procedure counter;
+	begin
+		own integer n;
+		n := n + 1;
+		counter := n
+	end;
+		
+	nn := counter;
+	outinteger ( 1 ,nn);
+	nn := counter;
+	outinteger ( 1 ,nn);
+	nn := counter;
+	outinteger ( 1 ,nn)
+	
+end

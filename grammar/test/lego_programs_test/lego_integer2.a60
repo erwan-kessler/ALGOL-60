@@ -1,0 +1,9 @@
+begin
+comment investigate subtraction underflow (min int = -2147483648);
+
+	integer n, m, rm;
+	ininteger(0,n); ininteger(0,m);
+	rm := n-m;
+	outinteger(1,rm)
+
+end

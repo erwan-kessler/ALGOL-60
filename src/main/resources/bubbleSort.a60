@@ -1,0 +1,42 @@
+begin
+    integer index;
+    integer size;
+
+    comment `see 5.2.4.2: The expressions cannot include any identifier that is declared, either explicitly or implicitly (see  Section 4.1.3), in the same block head as the array in question.' ;
+    size:=10;
+    begin
+        real array arrayToSort[0:size];
+        Boolean sorted;
+        integer i,j;
+        real temp;
+        comment `allocate the array with random value, here it is real ones'
+        arrayToSort[0]:=1.0;
+        arrayToSort[1]:=6.1;
+        arrayToSort[2]:=3.2;
+        arrayToSort[3]:=5.3;
+        arrayToSort[4]:=2.4;
+        arrayToSort[5]:=9.5;
+        arrayToSort[6]:=8.6;
+        arrayToSort[7]:=4.7;
+        arrayToSort[8]:=7.8;
+        arrayToSort[9]:=0.9;
+        outstring(1, `Before sorting:');
+        for index:=0 step 1 until size-1 do outreal(1,arrayToSort[index]);
+
+        comment `we cannot use a procedure since we can not pass by name, only by value';
+        for i := size-1 step -1 until 1 do
+            begin
+                for j:=0 step 1 until i-1 do
+                    begin
+                        if (arrayToSort[j+1] < arrayToSort[j]) then
+                            begin
+                                temp:=arrayToSort[j+1];
+                                arrayToSort[j+1]:=arrayToSort[j];
+                                arrayToSort[j]:=temp;
+                            end;
+                    end;
+            end;
+        outstring(1, `After sorting:');
+        for index:=0 step 1 until size-1 do outreal(1,arrayToSort[index]);
+    end
+end

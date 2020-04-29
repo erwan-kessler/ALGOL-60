@@ -1,0 +1,28 @@
+begin
+comment: multiplication of complex numbers ;
+	real c1r, c1i, c2r, c2i, c3r, c3i;
+	
+	procedure outcomplex(channel, cr, ci); integer channel; real cr, ci;
+	begin
+		outreal (channel, cr); outstring (channel,"+ i * ");outreal (channel, ci) 
+	end ;
+	
+	procedure incomplex0( cr, ci);  real cr, ci;
+	begin
+		outstring (1,"real part: ");inreal (0,cr); 
+		outstring (1,"imaginary part: "); inreal (0, ci)
+	end ;
+	
+	procedure complexMult( cr1, ci1, cr2, ci2, cr3, ci3);
+	real cr1, ci1, cr2, ci2, cr3, ci3;
+	begin
+		cr3 := cr1*cr2 - ci1*ci2;
+		ci3 := cr1*ci2 + ci1*cr2
+	end ;
+	
+	incomplex0(c1r, c1i);
+	incomplex0(c2r, c2i);
+
+	complexMult( c1r, c1i, c2r, c2i, c3r, c3i);
+	outcomplex(1, c3r, c3i); outstring(1,"\n")
+end

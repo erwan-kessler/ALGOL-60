@@ -1,0 +1,28 @@
+begin
+
+    Boolean B;
+    real x;
+    integer n;
+    integer array A [1:5];
+
+    integer u;
+    real u;
+    procedure P (A, B, C); value A;
+                integer A;
+                string B;
+                Boolean array C;
+                begin
+                c:=true;
+    end;
+    x := 2 := 3;
+    x := p;
+    x := A;
+    x := A[ if true then B else false ];
+    n := A[4.2*10/4];
+    n := A[ if B then 1 else .4];
+    x := 100/(1-1);
+
+    f(x,n,x,x);
+    P(x,n,x,x);
+    P(n,x,B);
+end

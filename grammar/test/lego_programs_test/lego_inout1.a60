@@ -1,0 +1,11 @@
+begin
+comment: FILE_3 reading;
+	integer n, i, k;
+	
+	n := 123;
+	for i := 1 step 1 until n do
+	begin
+		ininteger (3, k);
+		outinteger (1,k)
+	end
+end

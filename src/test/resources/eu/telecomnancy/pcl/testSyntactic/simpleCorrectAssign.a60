@@ -1,0 +1,4 @@
+begin
+    integer n;
+    n:=3;
+end

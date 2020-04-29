@@ -1,0 +1,19 @@
+begin
+   	real array nArr[0:4,0:4];
+   	integer array nArr2[6:10,0:4];
+
+   	integer i,j;
+   	heapInfo;
+   	for i := 0 step 1 until 3 do
+   	begin
+   	    for j := 0 step 1 until 3 do
+        begin
+        	nArr[i,j] := i*4+j+0.1;
+        	nArr2[i+6,j] := i*4+j+0.1;
+        	outreal(1,nArr[i,j]);
+        	comment nArr2 is of type integer so we only get integer in it;
+        	outreal(1,nArr2[i+6,j]);
+        end ;
+   	end ;
+
+end

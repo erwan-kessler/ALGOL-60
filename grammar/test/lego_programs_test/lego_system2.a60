@@ -1,0 +1,4 @@
+begin
+comment MARST: function inline for C code/function inserting;
+	inline( " puts(\"test\"); " )
+end

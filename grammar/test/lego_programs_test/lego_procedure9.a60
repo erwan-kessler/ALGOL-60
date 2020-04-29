@@ -1,0 +1,14 @@
+begin
+comment visibility of outside variables;
+	integer nn;
+	
+	procedure test;
+	begin
+		nn := nn+2
+	end;
+		
+	nn := 2;
+	test;
+	outinteger ( 1 ,nn)
+	
+end

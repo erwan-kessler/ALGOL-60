@@ -1,0 +1,10 @@
+begin
+comment: if inside arithmetic expression;
+
+	integer n, m;
+	
+	ininteger(0,n);
+	m := if n < 0 then -n else n; 
+	outinteger(1, m); outstring(1,"\n")
+
+end

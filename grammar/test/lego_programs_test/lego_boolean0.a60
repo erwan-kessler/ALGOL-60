@@ -1,0 +1,6 @@
+begin
+comment print boolean value;
+	boolean b;
+	b := false;
+	if b then outstring(1, "true") else outstring(1, "false");
+end

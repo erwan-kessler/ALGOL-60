@@ -1,0 +1,12 @@
+begin
+comment  computer memory experimental estimation;
+	integer n;
+start: ;
+	ininteger(0,n); 
+	begin
+		integer array a[1:n];
+		a[n] := 1;
+		outstring(1, "done\n")
+	end;
+	go to start
+end

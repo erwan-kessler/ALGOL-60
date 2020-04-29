@@ -1,0 +1,7 @@
+begin
+comment  11/6   and  13/6 compare;
+	integer n, m, r;
+	ininteger(0,n); ininteger(0,m);
+	r := n % m; comment what is it?;
+	outinteger(1,r)
+end

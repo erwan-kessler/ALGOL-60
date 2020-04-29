@@ -1,0 +1,11 @@
+begin
+	comment abs function heviside parabola;
+	real x, y;
+	
+	for x:= -3.0 step 0.2 until 3.0 do
+	begin
+		y := ( abs (x-1) + abs (x+1) - 2.0 ) / 2.0;
+		outreal (1, x); outreal (1, y); outstring (1,"\n")
+	end 
+
+end

@@ -1,0 +1,12 @@
+begin
+comment negation operation;
+	boolean bb;
+	
+	procedure outboolean(channel, b); integer channel; boolean b;
+	begin
+		if b then outstring (channel, "true ") else outstring (channel, "false ")
+	end;
+	
+	bb := false; bb := ! bb;
+	outboolean(1, bb); outstring (1, "\n")
+end

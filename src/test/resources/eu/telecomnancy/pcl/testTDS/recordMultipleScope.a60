@@ -1,0 +1,12 @@
+begin
+   integer a;
+   begin
+      real a;
+      begin
+        integer a;
+      end;
+      begin
+        Boolean b;
+      end
+   end
+end

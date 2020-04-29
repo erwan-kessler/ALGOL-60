@@ -1,0 +1,8 @@
+begin
+	comment epsilon;
+
+	real x;
+	x := epsilon;
+	outreal(1,x)
+	
+end

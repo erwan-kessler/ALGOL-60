@@ -1,0 +1,25 @@
+begin
+        integer i;
+        integer procedure inc(i); value i; integer i;
+            inc := if i + 1 > 4 then 1 else i + 1;
+        switch s := 1, 2, 3, soleil;
+
+        i := 0;
+
+        next:
+            i := inc(i);
+            go to s[i];
+
+        3:
+            outstring(1, `Trois');
+            go to next;
+        2:
+            outstring(1, `Deux');
+            go to next;
+        1:
+            outstring(1, `Un');
+            go to next;
+
+        soleil:
+            outstring(1, `SOLEIL');
+end

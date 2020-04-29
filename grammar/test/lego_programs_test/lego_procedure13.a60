@@ -1,0 +1,22 @@
+begin
+comment pass procedure as argument to another procedure;
+	
+	real procedure sqr (x); real x;
+	begin
+		sqr := x*x
+	end;
+	
+	procedure table ( f ); real procedure f;
+	begin 
+		real x;
+		for x := 0 step 0.01 until 1 do 
+		begin
+		outreal (1,x); outreal (1,f(x)); outstring(1,"\n")
+		end
+	end;
+		
+	table(sqr);
+	outstring(1,"\n");
+	table(sqrt)
+	
+end

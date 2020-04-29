@@ -1,0 +1,13 @@
+begin
+	integer n;
+	
+	procedure myPrint(m);
+	value m; integer m;
+	begin
+		outinteger(1,m)
+	end;
+	
+	n :=776;
+	myPrint(n)
+	
+end

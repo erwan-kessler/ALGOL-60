@@ -1,0 +1,12 @@
+begin
+comment typeless procedure without arguments;
+	
+	procedure cr;
+	begin
+		outstring (1,"\n")
+	end;
+	
+	cr;
+	cr
+	
+end

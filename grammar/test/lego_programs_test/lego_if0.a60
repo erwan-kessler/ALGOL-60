@@ -1,0 +1,10 @@
+begin
+comment comparison of integer with 0;
+	integer n;
+	
+	ininteger(0,n);
+	if n < 0 then outstring(1,"negative")
+	else outstring(1, "0 or positive");
+	outstring(1,"\n")
+	
+end

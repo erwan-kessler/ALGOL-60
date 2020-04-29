@@ -1,0 +1,28 @@
+begin
+        integer w;
+        integer i;
+        integer j;
+        j:=1;
+        j:=2;
+        i:=3;
+        begin
+            integer k;
+            i:=1;
+            for i := 3,2,1,0 while (i < 10),8,7,6 do
+                begin
+                    i := i + 1
+                end;
+            i:=3;
+            k:=2;
+            begin
+                k:=4;
+                i:=k;
+                j:=i;
+                w:=i+j;
+                for k := 3,2,1,0 while (i < w),8,7,6 do
+                    begin
+                        i := i + 1
+                    end;
+            end
+        end
+end

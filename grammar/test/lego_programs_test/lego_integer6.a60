@@ -1,0 +1,12 @@
+begin
+comment  bit presentation from left to right;
+	integer n, m, r;
+	ininteger(0,n);
+	for m :=1 step 1 until 31 do
+	begin
+		r := n % 2;	
+		r := n - r*2;
+		outinteger(1,r); comment outstring(1,"\n");
+		n := n % 2
+	end
+end

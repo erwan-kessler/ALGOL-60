@@ -1,0 +1,33 @@
+real procedure cputime;
+inline("my_dsa.retval.u.real_val = (double)clock() / (double)CLOCKS_PER_SEC;");
+
+begin
+	comment fast calculation of tetric polynomial;
+	
+	real array a[0:4];
+	real x, f;
+	integer i;
+	
+	outstring (1,"coefficients a0,a1,a2,a3,a4 = ");
+	for i :=0 step 1 until 4 do inreal (0,a[i]);
+	
+	comment standard calculation;
+	outreal (1, cputime); outstring(1,"\n");
+	
+	for i := 0 step 1 until 10000000 do
+	begin
+		x := i*0.0001;
+		f := a[0] + a[1]*x + a[2]*x*x + a[3]*x*x*x + a[4]*x*x*x*x
+	end ;
+	
+	comment fast calculation;
+	outreal (1, cputime); outstring(1,"\n");
+	
+	for i := 0 step 1 until 10000000 do
+	begin
+		x := i*0.0001;
+		f := a[0] + x*(a[1] + x*(a[2] + x*(a[3] + x*a[4])))
+	end ;
+	
+	outreal (1, cputime); outstring(1,"\n")
+end

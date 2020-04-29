@@ -1,0 +1,35 @@
+begin
+
+    integer i,n;
+    real a,b,c;
+    real procedure cos(x); value x; real x;
+    begin
+        real res, xi, x2;
+        integer i;
+        res := xi := 1;
+        x2 := x*x;
+
+        for i := 2 step 2 until 8 do
+        begin
+            xi := -xi * x2 / ((i-1) * i);
+            res := res + xi;
+        end;
+
+        cos := res
+    end;
+
+    a := 3.2;
+    b := 2.2;
+    c := 1.7;
+    outstring(1,`Logarithme de 3.2 : ');
+    outreal(1, log(a));
+    outstring(1,`Exponentielle de de 2.2 : ');
+    outreal(1, exp(b));
+    outstring(1,`Calcul de 3.2^1.7 : ');
+    outreal(1, a**c);
+    outstring(1,`log(exp(1)) :');
+    outreal(1,log(exp(1.0)));
+    outstring(1,`Cosinus de 3.14 : ');
+    outreal(1,cos(3.14));
+
+end

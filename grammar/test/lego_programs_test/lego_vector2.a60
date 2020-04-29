@@ -1,0 +1,13 @@
+begin
+	procedure inVector(ndim);
+	value ndim; integer ndim;
+	begin
+	    real array v[1:100];
+		integer i;
+		for i := 1 step 1 until ndim do v[i] :=i;
+		inVector(ndim-1);
+	end;
+	
+	inVector(10);
+
+end

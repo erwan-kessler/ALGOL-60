@@ -1,0 +1,52 @@
+image: gradle:jdk13
+
+variables:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.internal.launcher.welcomeMessageEnabled=false"
+
+cache:
+  paths:
+    - .gradle/caches
+    - .gradle/wrapper
+
+stages:
+  - build
+  - test
+  - deploy
+
+build:
+  stage: build
+  script: gradle --no-build-cache build
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: push
+    paths:
+      - build
+      - .gradle
+
+test:
+  stage: test
+  script: gradle --build-cache test
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull-push
+    paths:
+      - build
+      - .gradle
+  artifacts:
+    paths:
+      - build/reports
+    expire_in: 1 week
+
+deploy:
+  stage: deploy
+  script: gradle --build-cache fatJar
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull-push
+    paths:
+      - build
+      - .gradle
+  artifacts:
+    paths:
+      - build/libs
+    expire_in: 1 week

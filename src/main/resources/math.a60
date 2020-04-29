@@ -1,0 +1,65 @@
+begin
+    real pi;
+    integer k;
+
+    real procedure abs(x);
+    value x; real x;
+    abs := if x < 0 then -x else x;
+
+    integer procedure mod(a, b);
+    value a, b; integer a, b;
+    begin
+        a := a - a//b * b;
+        mod := if a < 0 then a + b else a
+    end;
+
+    integer procedure modr(a, b);
+    value a, b; real a, b;
+    begin
+    comment very basic modulo for real numbers;
+        b := abs(b);
+        if a < 0 then
+        begin
+            for a := a while a < 0 do a := a + b
+        end else begin
+            for a := a while a > b do a := a - b
+        end;
+        modr := a
+    end;
+
+    real procedure cos(x);
+    value x; real x;
+    begin
+        real res, xi, x2;
+        integer i;
+        res := xi := 1;
+        x2 := x*x;
+
+        for i := 2 step 2 until 8 do
+        begin
+            xi := -xi * x2 / ((i-1) * i);
+            res := res + xi;
+        end;
+
+        cos := res
+    end;
+
+    real procedure sin(x);
+    value x; real x;
+    begin
+        real res, xi, x2;
+        integer i;
+        res := xi := x;
+        x2 := x*x;
+
+        for i := 3 step 2 until 9 do
+        begin
+            xi := -xi * x2 / ((i-1) * i);
+            res := res + xi;
+        end;
+
+        sin := res
+    end;
+
+    pi := 3.141592;
+end

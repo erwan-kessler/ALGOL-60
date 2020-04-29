@@ -1,0 +1,23 @@
+begin
+comment real numbers comparison;
+	boolean bb0, bb1, bb2, bb3, bb4;
+	real an, am;
+	
+	procedure outboolean(channel, b); integer channel; boolean b;
+	begin
+		if b then outstring (channel, "true ") else outstring (channel, "false ")
+	end;
+	
+	inreal (0,an);
+	inreal (0,am);
+	bb0 := (an = am);
+	bb1 := (an < am);
+	bb2 := (an <= am);
+	bb3 := (an > am);
+	bb4 := (an >= am);
+	outboolean(1, bb0); outstring (1, "\n");
+	outboolean(1, bb1); outstring (1, "\n");
+	outboolean(1, bb2); outstring (1, "\n");
+	outboolean(1, bb3); outstring (1, "\n");
+	outboolean(1, bb4); outstring (1, "\n")
+end

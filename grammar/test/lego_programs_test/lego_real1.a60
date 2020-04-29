@@ -1,0 +1,7 @@
+begin
+comment scientific notation (using #);
+	real x;
+	x := 1.2#30;
+	outreal(1,x);
+	comment error x := 1.2e40;
+end

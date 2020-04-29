@@ -1,0 +1,27 @@
+begin
+comment: complex number norm;
+	real ar, ai, norm;
+	
+	procedure outcomplex(channel, cr, ci); integer channel; real cr, ci;
+	begin
+		outreal (channel, cr); outstring (channel,"+i*");outreal (channel, ci) 
+	end ;
+	
+	procedure incomplex0( cr, ci);  real cr, ci;
+	begin
+		inreal (0,cr); 
+		comment outstring (1,"+i * "); 
+		inreal (0, ci)
+	end ;
+	
+	real procedure complexNorm( cr, ci); real cr, ci;
+	begin
+		complexNorm := sqrt(cr*cr+ci*ci)
+	end ;
+	
+	incomplex0(ar, ai); 
+	outcomplex(1, ar, ai); outstring (1,"\n");
+
+	norm := complexNorm( ar, ai);
+	outreal(1, norm); outstring (1,"\n")
+end

@@ -1,0 +1,4 @@
+begin
+	integer i;
+	for i:= 1 step 1 until 20 do outinteger(1,i)
+end

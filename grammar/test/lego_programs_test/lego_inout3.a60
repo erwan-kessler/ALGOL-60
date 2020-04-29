@@ -1,0 +1,11 @@
+begin
+comment: FILE_4 with real numbers reading;
+	integer n, i;
+	real r;
+	n := 100;
+	for i := 1 step 1 until n do
+	begin
+		inreal (4, r);
+		outreal (1,r); outstring (1,"\n")
+	end
+end

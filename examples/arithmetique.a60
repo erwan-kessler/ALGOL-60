@@ -1,0 +1,66 @@
+begin
+        integer procedure Factorial(i);
+        value i;
+        integer i;
+        begin
+                if i <= 1 then
+                        Factorial := 1
+                else
+                        Factorial := i * Factorial(i - 1)
+        end;
+
+        integer procedure FibonacciNaive(i);
+        value i;
+        integer i;
+        begin
+                if i <= 1 then
+                        FibonacciNaive := i
+                else
+                        FibonacciNaive := FibonacciNaive(i - 2) + FibonacciNaive(i - 1)
+        end;
+
+        real procedure PiGregoryLeibniz(n);
+        value n;
+        integer n;
+        begin
+                integer i, s;
+                real q, r;
+
+                s := 1;
+                q := 4;
+                r := 0;
+                for i := 1 step 2 until n do
+                begin
+                        r := r + s * q / i;
+                        s := -s;
+                end;
+
+                PiGregoryLeibniz := r
+        end;
+
+        integer i;
+        real r;
+
+        outstring(1, `--------------------------------------------------');
+
+        i := 7;
+        outstring(1, `Factorial(7) = (should be 5040)');
+        i := Factorial(i);
+        outinteger(1, i);
+
+        outstring(1, `--------------------------------------------------');
+
+        i := 16;
+        outstring(1, `FibonacciNaive(16) = (should be 987)');
+        i := FibonacciNaive(i);
+        outinteger(1, i);
+
+        outstring(1, `--------------------------------------------------');
+
+        i := 100;
+        outstring(1, `PiGregoryLeibniz(100) =');
+        r := PiGregoryLeibniz(i);
+        outreal(1, r);
+
+        outstring(1, `--------------------------------------------------')
+end

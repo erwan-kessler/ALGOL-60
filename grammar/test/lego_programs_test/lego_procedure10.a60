@@ -1,0 +1,15 @@
+comment ======================================================== ;
+procedure test(m); value m; integer m;
+begin
+	outinteger(1,m*m)
+end ;
+
+comment ======================================================== ;
+begin
+comment procedure defined outside of main block
+        before or after it;
+	integer n;
+	n := 9;
+	test(n)
+end
+

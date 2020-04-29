@@ -1,0 +1,40 @@
+begin
+    integer A;
+    integer B;
+    begin
+          integer C;
+                          begin
+                                  integer D;
+                          end;
+                          begin
+                                  integer E;
+                          end;
+    end;
+    begin
+          integer F;
+                          begin
+                                  integer G;
+                          end;
+                          begin
+                                  integer H;
+                          end;
+    end;
+    begin
+          integer I;
+                          begin
+                                  integer K;
+                          end;
+                          begin
+                                  integer L;
+                          end;
+    end;
+    begin
+          integer M;
+                          begin
+                                  integer N;
+                          end;
+                          begin
+                                  integer O;
+                          end;
+    end;
+end

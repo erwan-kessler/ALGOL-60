@@ -1,0 +1,16 @@
+begin
+comment integral of 1/(1-x*x) from 0 to 1;
+	real r, rr, s;
+	integer n;
+	
+	ininteger (0,n);
+	rr := 1.0 / n;
+	
+	s := 0;
+	for r := 0 step rr until (1.0 - rr) do 
+	begin
+		s := s + (1.0 / sqrt(1 - r*r)) * rr
+	end;
+	outreal (1,s); outstring (1,"\n")
+	
+end

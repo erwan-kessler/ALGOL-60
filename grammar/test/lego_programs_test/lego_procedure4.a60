@@ -1,0 +1,12 @@
+begin
+comment real procedure without arguments;
+	real r;
+	
+	real procedure pi;
+	begin
+		pi := 3.141592654
+	end;
+	
+	r := pi;
+	outreal (1,r)
+end

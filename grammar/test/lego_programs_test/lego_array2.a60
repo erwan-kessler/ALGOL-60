@@ -1,0 +1,11 @@
+begin
+	comment square root real array;
+	real array rArr[0:100];
+	real i;
+	for i := 0 step 0.01 until 1 do
+	begin 
+		rArr[i] := sqrt(i);
+		outreal (1, i); outreal (1, entier(rArr[i]*10000)/10000); outstring (1,"\n")
+	end ;
+	outstring (1,"\n")
+end

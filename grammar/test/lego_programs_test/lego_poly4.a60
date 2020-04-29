@@ -1,0 +1,28 @@
+begin
+	comment polynomial multiplication;
+	
+	real array a[0:3];
+	real array b[0:3];
+	real array c[0:6];
+	integer i, dim;
+	
+	dim := 3;
+	outstring(1,"coefficients of polynomial a0, a1, a2, a3 = ");
+	for i := 0 step 1 until dim do inreal (0,a[i]);
+	outstring(1,"coefficients of polynomial b0, b1, b2, b3 = ");
+	for i := 0 step 1 until dim do inreal (0,b[i]);
+	
+	c[0] := a[0]*b[0]; 
+	c[1] := a[0]*b[1] + a[1]*b[0];
+	c[2] := a[0]*b[2] + a[1]*b[1] + a[2]*b[0];
+	c[3] := a[0]*b[3] + a[1]*b[2] + a[2]*b[1] + a[3]*b[0];
+	c[4] := a[1]*b[3] + a[2]*b[2] + a[3]*b[1];
+	c[5] := a[2]*b[3] + a[3]*b[2];
+	c[6] := a[3]*b[3];
+	
+	
+	outstring(1,"coefficients of polynomial product c0, c1, c2, c3, c4, c5, c6 = \n");
+	for i := 0 step 1 until (dim+dim) do outreal (1,c[i]);
+	outstring(1,"\n")
+	
+end

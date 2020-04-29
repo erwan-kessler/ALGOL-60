@@ -1,0 +1,34 @@
+begin
+    real temperature, i;
+    switch a := 1, 2, 3, soleil;
+    switch b :=
+        if temperature < 0 then (
+            if temperature < -50 then congelation
+            else glagla
+        ) else if temperature < 20 then brrr
+        else a[mod(temperature, 3)+1],
+        a[4]
+    ;
+
+    for i := i+1, 1 while ~mort do
+        go to b[1];
+
+    congelation : print(`je suis tout congelé !');
+        comment on appelle la procédure "congeler" : ;
+        begin congeler end;
+        go to fini;
+
+    glagla : print(`je dis pas mais on se les caille un peu !');
+        go to fini;
+
+    brrr : print(`ça pourrait être mieux.');
+        go to fini;
+
+    1 : 2 : 3 : ok;
+        
+        go to fini;
+
+    soleil : go to fini;
+
+    fini : print(`end');
+end

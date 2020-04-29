@@ -1,0 +1,7 @@
+begin
+	comment read real number and print it;
+	comment read in forms with e only ( no #);
+	real x;
+	inreal(0, x);
+	outreal(1,x)
+end

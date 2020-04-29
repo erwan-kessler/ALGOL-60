@@ -1,0 +1,18 @@
+begin
+comment variable visibility in blocks;
+	real x;
+	x := 1.234;
+	
+	begin
+		outreal(1,x)
+	end;
+	
+	begin
+		real x;
+		x := 9.876;
+		outreal(1,x)
+	end;
+	
+	outreal(1,x)
+
+	end 

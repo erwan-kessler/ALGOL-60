@@ -1,0 +1,14 @@
+begin
+    real procedure realpowint(x,n); value x,n; real x; integer n;
+        begin
+            integer i;
+            real result;
+            result := x;
+            for i:= 1 step 1 until n-1 do
+                begin
+                    result := result *x;
+                end;
+            realpowint := result;
+        end;
+    outreal(1,realpowint(3.3,2))
+end

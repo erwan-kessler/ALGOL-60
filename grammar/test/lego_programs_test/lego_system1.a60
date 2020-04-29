@@ -1,0 +1,4 @@
+begin
+comment using library procedure fault;
+	
+end

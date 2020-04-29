@@ -1,0 +1,17 @@
+begin
+    real procedure log(x); value x; real x;
+          begin
+             integer max;
+             integer i;
+             integer sign;
+             real result;
+             max := 15 ;
+             result := 0;
+             for i := 0 step 1 until max do
+             begin
+                 result := result + (((x-1)/(x+1))**(2*i+1))/(2*i+1);
+             end;
+          log:=2*result;
+    end;
+    outreal(1,log(2));
+end

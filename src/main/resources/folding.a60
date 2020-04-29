@@ -1,0 +1,11 @@
+begin
+    real x;
+    Boolean b;
+    x := (1 + 2) * 3;
+    b := (1 <= 2) => (true /\ false);
+    x := if (true \/ false) then 1 + 1 else -2;
+    if (false <=> false) then
+        outstring(1,`THEN')
+    else
+        outstring(1,`ELSE')
+end

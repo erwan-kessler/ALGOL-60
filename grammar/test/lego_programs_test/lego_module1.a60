@@ -1,0 +1,6 @@
+procedure Print1(m);
+value m; integer m;
+begin
+	integer i;
+	for i:=1 step 1 until m do outinteger(1,i)
+end;

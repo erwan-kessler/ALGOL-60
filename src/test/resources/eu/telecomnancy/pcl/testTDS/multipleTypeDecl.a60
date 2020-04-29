@@ -1,0 +1,22 @@
+begin
+    integer a;
+    real a;
+    Boolean a;
+    real array a [0:1];
+    integer array a [0:1];
+    Boolean array a [0:1];
+    procedure a; a:=1;
+    switch a:=a;
+    a : go to (a) ;
+    begin
+        real array a [0:1];
+        integer array a [0:1];
+        Boolean array a [0:1];
+        integer a;
+        real a;
+        Boolean a;
+        procedure a; a:=1;
+        switch a:=a;
+        a : go to (a) ;
+    end
+end

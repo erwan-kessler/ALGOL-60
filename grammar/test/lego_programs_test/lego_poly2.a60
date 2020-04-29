@@ -1,0 +1,43 @@
+begin
+	comment cubic equation real root;
+	
+	real a, b, c, d;
+	real x1, x2, f1, f2;
+	real x, f;
+	
+	real procedure poly3(a0,a1,a2,a3, x);
+	value a0,a1,a2,a3, x; real a0,a1,a2,a3, x;
+	begin
+		poly3 := a0 + x*(a1 + x*(a2 + a3*x))
+	end;
+	
+	outstring(1,"coefficients a,b,c,d = ");
+	inreal(0,a); inreal(0,b); inreal(0,c); inreal(0,d);
+	
+	x1 := -100.0; x2 := 100.0;
+	
+	f1 := poly3(a,b,c,d, x1); 
+	f2 := poly3(a,b,c,d, x2);
+	
+beg:; 
+	outreal(1,x1); outreal(1,x2); outreal(1,f1); outreal(1,f2); outstring(1,"\n");
+	x := (x1 + x2) / 2.0;
+	f := poly3(a,b,c,d, x);
+	sign(f);
+	if sign(f) = sign(f1) then
+	begin
+		x1 := x;  f1 := f
+	end
+	else
+	begin
+		x2 := x;  f2 := f
+	end;
+	
+	if abs(x1-x2) > 0.000001 then goto beg;
+	
+	x := (x1 + x2) / 2.0;
+	outstring(1,"solution = "); outreal(1,x); outstring(1,"\n");
+	
+finish:
+	
+end

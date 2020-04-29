@@ -1,0 +1,10 @@
+begin
+	comment real power of real;
+	real x, y, z;
+start:
+	inreal (0,x);
+	inreal (0,y);
+	z := x ** y;
+	outreal(1,z);
+	goto start
+end

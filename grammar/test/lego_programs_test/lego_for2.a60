@@ -1,0 +1,12 @@
+begin
+	integer n, m, i, s;
+	real sum;
+	ininteger(0,n);
+	
+	for i:=1 step 1 until n do
+	begin
+		sum := sum + i
+	end
+	outinteger(1, s); 
+	outstring(1,"\n")
+end

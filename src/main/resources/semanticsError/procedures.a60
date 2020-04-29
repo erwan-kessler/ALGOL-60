@@ -1,0 +1,33 @@
+begin
+    integer n;
+    array arr[1+1.0:2];
+
+    switch s := test;
+
+    real procedure A0L(k, p, q) Result:(r); value k, p;
+        array k;
+        switch q;
+        integer procedure p;
+        label r;
+        begin
+        A0L := if k[1] < p(1) then 1e4*1.0 else .6;
+        go to r;
+        end;
+
+    integer procedure max(a, b); value a, b;
+        integer a, b;
+        max := if a < b then b else a;
+
+    test: n := 5;
+    A0L(arr, max, s, s[1]);
+    n := arr[1+2.8];
+    n := if true then 3.2 else 3.5;
+    n := max(2.6, 2.2);
+
+    begin
+        integer m;
+        m := 3;
+        A0L := 2.0;
+        go to test;
+    end;
+end

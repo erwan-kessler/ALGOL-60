@@ -1,0 +1,9 @@
+begin
+ L2:
+     if ((23 + 6 **1 )<=> 1 =  -1) then
+         begin
+            real x;
+            x:=true;
+            end
+         else go to L2;
+end

@@ -1,0 +1,15 @@
+begin
+comment passing parameter by name (by reference);
+	integer nn;
+	
+	comment by reference;
+	procedure proc2(m); integer m;
+	begin
+		m := m+2
+	end;
+		
+	nn := 2;
+	proc2(nn);
+	outinteger ( 1 ,nn)
+	
+end

@@ -1,0 +1,11 @@
+begin
+	comment array with square numbers ;
+	integer array nArr[1:100];
+	integer i;
+	for i := 1 step 1 until 100 do
+	begin 
+		nArr[i] := i*i;
+		outinteger (1, nArr[i])
+	end ;
+	outstring (1,"\n")
+end

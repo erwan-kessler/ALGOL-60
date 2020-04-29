@@ -1,0 +1,10 @@
+begin
+	integer n;
+	
+	ininteger (0,n);	
+	if n < 0 then outstring (1,"negative")
+	else if n=0 then outstring (1, "0")
+	else outstring (1, "positive");	
+	outstring (1,"\n")
+	
+end

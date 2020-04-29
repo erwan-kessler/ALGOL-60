@@ -1,0 +1,4 @@
+begin
+	real r;
+	for r := 0 step 0.01 until 1 do outreal(1,r)
+end

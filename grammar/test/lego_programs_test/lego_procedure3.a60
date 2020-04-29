@@ -1,0 +1,14 @@
+begin
+	integer n, nn;
+	
+	integer procedure sqr(m);
+	value m; integer m;
+	begin
+		sqr := m * m
+	end;
+		
+	n := 123;
+	nn := sqr(n);
+	outinteger (1,nn)
+	
+end

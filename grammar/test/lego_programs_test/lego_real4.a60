@@ -1,0 +1,8 @@
+begin
+	comment maxreal;
+
+	real x;
+	x := maxreal;
+	outreal(1,x)
+	
+end

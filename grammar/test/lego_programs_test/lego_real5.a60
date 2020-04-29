@@ -1,0 +1,8 @@
+begin
+	comment minreal - positive;
+
+	real x;
+	x := minreal;
+	outreal(1,x)
+	
+end

@@ -1,0 +1,15 @@
+begin
+	comment real arithmetics sometimes is not associative;
+	real x, y, z, u, v;
+start:
+	inreal (0,x);
+	inreal (0,y);
+	inreal (0,z);
+	u := (x + y) + z;
+	v := x + (y + z);
+	outreal(1,u - v);
+	u := (x * y) * z;
+	v := x * (y * z);
+	outreal(1,u - v);
+	goto start
+end

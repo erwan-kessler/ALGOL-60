@@ -1,0 +1,6 @@
+begin
+	comment: FILE_4 creation with output of strings;
+	
+	outstring ( 4 , "test:\n");	
+	outstring ( 4 , "Hello, Algol60!\n")	
+end

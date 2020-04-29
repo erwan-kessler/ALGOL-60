@@ -1,0 +1,27 @@
+begin
+	comment Pascal Triangle array;
+	
+	integer array nPT[1:101, 1:101];
+	integer n, i, j ;
+	n := 20;
+	nPT[1,1] := 1; nPT[1,2] := 1;
+	
+	for i := 2 step 1 until n do
+	begin 
+		nPT[i, 1] := 1;
+		nPT[i, i+1] := 1;
+		for j := 2 step 1 until i do
+		begin
+			nPT[i,j] := nPT[i-1,j-1] + nPT[i-1,j]
+		end
+	end ; 
+	
+	for i := 1 step 1 until n do
+	begin 
+		for j := 1 step 1 until (i+1) do
+		begin
+			outinteger (1, nPT[i,j])
+		end ;
+		outstring (1,"\n")
+	end 
+end

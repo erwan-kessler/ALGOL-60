@@ -1,0 +1,19 @@
+begin
+        real procedure exp(x);value x ; real x;
+        begin
+            integer max;
+            integer i;
+            integer fact;
+            real result;
+                max := 7;
+                result := 0;
+                fact := 1;
+                for i:= 0 step 1 until max do
+                begin
+                    if i=0 then fact := 1 else fact := fact*i;
+                    result := result + (x**i)/fact;
+                end;
+            exp := result;
+        end;
+       outreal(1,exp(2));
+end

@@ -1,0 +1,24 @@
+begin
+	comment function z = x*y in rectangle (0-1,0-1);
+	
+	real array ra[0:100, 0:100];
+	integer i, j , n;
+	
+	n := 20;
+	for i := 0 step 1 until n do
+	begin 
+		for j := 0 step 1 until n do
+		begin
+			ra[i,j] := (i/n)*(j/n)
+		end
+	end ; 
+	
+	for i := 0 step 1 until n do
+	begin 
+		for j := 0 step 1 until n do
+		begin
+			outreal (1, entier(ra[i,j]*100)/100.0)
+		end ;
+		outstring (1,"\n")
+	end 
+end

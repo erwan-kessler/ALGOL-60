@@ -1,0 +1,13 @@
+begin
+comment real procedure with arguments;
+	real r;
+	
+	real procedure linearFunc(a, b, x);
+	value a, b, x; real a, b, x;
+	begin
+		linearFunc := a + b*x
+	end;
+	
+	r := linearFunc(1, 2, 3.5);
+	outreal (1,r)
+end

@@ -1,0 +1,13 @@
+begin
+    integer n;
+    n:=1:=n;
+    begin
+        begin
+            integer n;
+            n:=1:=n:=2;
+        end;
+        begin
+            n:=1:=2;
+        end
+    end
+end
