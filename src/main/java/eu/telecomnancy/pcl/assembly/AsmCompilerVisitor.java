@@ -1956,7 +1956,7 @@ public class AsmCompilerVisitor implements ASTVisitor<AsmCompilerVisitor> {
                 reg = registerAllocator.getNextAvailableRegister();
                 writer.ldw(reg, RegisterAllocator.RET);
                 if (isReal) {
-                    regf = registerAllocator.getTemporaryRegister();
+                    regf = registerAllocator.getNextAvailableRegister();
                     writer.ldw(regf, RegisterAllocator.RETF);
                 }
             }
