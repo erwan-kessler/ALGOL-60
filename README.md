@@ -3,10 +3,10 @@
 
 ## Auteurs
 
+* [Locust2520](https://github.com/Locust2520)
 * `<Redacted>`
-* `<Redacted>`
-* [Erwan KESSLER](mailto:erwan.kessler@telecomnancy.net)
-* `<Redacted>`
+* [Erwan Kessler](mailto:erwan.kessler@telecomnancy.net)
+* [Yann Meyer]()
 
 ## Structure du dépôt
 
