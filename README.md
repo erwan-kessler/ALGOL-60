@@ -10,7 +10,7 @@
 
 ## Structure du dépôt
 
-dossier 	        | contenu
+folder     	        | content
 --------------------|---------------------------------
 `grammar/` 	        | Grammar of algol 60 in LL1 form
 `test/` 	        | unit test
@@ -69,8 +69,9 @@ or be .iup or .piup file that will be run only (need --run option)
 ## Gradle commands
 There is 3 important groups in the gradle tasks
 
-
-`utils/` 	        | Have all the utilities to debug or launch quickly
+Task group          | content
+--------------------|---------------------------------
+`utils/` 	        | utilities to debug or launch quickly
 `simple_examples/`  | unit examples
 `semantic_serror/`  | unit semantics error
 `real_examples//`   | real world examples
